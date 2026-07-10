@@ -24,6 +24,7 @@
 - [x] ruff 도입 + 자동 수정 가능한 미사용 import 정리
 - [x] ruff F821 10건 해소 — SQLAlchemy 모델 6개 파일에 `TYPE_CHECKING` 가드 import 추가 (`ruff check`로 0건 재확인은 Docker 있는 환경에서 필요)
 - [x] 국토부 커넥터 법정동코드 매핑 전국 확장 (`real_transaction_connector.py`의 `_LAWD_CD_MAP`, 9개 → 250개 시/군/구), `/run-checks`로 재검증 완료 (2026-07-11)
-- [x] Docker Desktop 신규 설치(집 Mac) + `/run-checks` 전체 재검증(ruff check/alembic/pytest 37/37/`/docs`) 완료. `ruff format --check` 미통과(75개 파일, 기존 스타일 드리프트)는 별도 결정 필요 — HANDOFF.md 이슈 5번 참고
+- [x] Docker Desktop 신규 설치(집 Mac) + `/run-checks` 전체 재검증(ruff check/alembic/pytest 37/37/`/docs`) 완료
+- [x] `ruff format .` 일괄 적용 (75개 파일 스타일 드리프트 해소, 로직 변경 없음, ruff check/pytest 재확인 완료)
 
 각 작업 완료 시 `/run-checks` 실행 후 `progress.md` 갱신 + git commit/push.
