@@ -1,4 +1,5 @@
 """user_watchlist DB 접근 계층 (지시서 §7.5)."""
+
 from __future__ import annotations
 
 from sqlalchemy import delete, select

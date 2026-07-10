@@ -1,4 +1,5 @@
 """경매 물건 검색/상세 API 테스트 (지시서 §13.2, §13.3)."""
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
@@ -140,7 +141,9 @@ async def test_search_pagination(client: AsyncClient, db_session: AsyncSession) 
     assert body["items"][1]["minimum_price"] == 400_000_000
 
 
-async def test_search_sort_by_minimum_price_desc(client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_search_sort_by_minimum_price_desc(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
     await _seed_items(db_session)
 
     response = await client.get("/api/v1/auction-items", params={"sort": "minimum_price_desc"})
@@ -168,7 +171,9 @@ async def test_get_detail_existing_item(client: AsyncClient, db_session: AsyncSe
     assert body["disclaimer"]
 
 
-async def test_get_detail_not_found_returns_404(client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_get_detail_not_found_returns_404(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
     response = await client.get("/api/v1/auction-items/999999")
 
     assert response.status_code == 404

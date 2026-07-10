@@ -4,6 +4,7 @@ Phase 5에서 구현 예정 (Phase 1은 프로젝트 골격만 담당).
 
 DataQualitySummaryResponse는 Phase 4 관리자 데이터 품질 API(지시서 §7.8, §10)용 스키마다.
 """
+
 from __future__ import annotations
 
 from pydantic import BaseModel

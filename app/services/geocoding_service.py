@@ -5,6 +5,7 @@ KAKAO_MAP_API_KEY/NAVER_MAP_API_KEY가 없으면 좌표 None을 반환한다.
 좌표(latitude/longitude) 필드는 항상 확보해 두어 추후 PostGIS 연결을 전제로 한다
 (CLAUDE.md 데이터 흐름 원칙 5).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

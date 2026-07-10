@@ -1,4 +1,5 @@
 """참고 낙찰가 예측 라우터 (지시서 §7.4)."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -25,7 +26,9 @@ async def predict_price(
 
     calculation = await service.predict_and_save(auction_item_id)
     if calculation is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="경매 물건을 찾을 수 없습니다.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="경매 물건을 찾을 수 없습니다."
+        )
 
     return PredictPriceResponse(
         auction_item_id=calculation.auction_item_id,

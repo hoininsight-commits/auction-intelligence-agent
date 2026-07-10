@@ -1,4 +1,5 @@
 """경매 물건 상세 비즈니스 로직 (지시서 §7.3)."""
+
 from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,7 +38,9 @@ async def get_auction_item_detail(
         return None
 
     prediction = await auction_item_repository.get_latest_prediction(session, auction_item_id)
-    risk_assessment = await auction_item_repository.get_latest_risk_assessment(session, auction_item_id)
+    risk_assessment = await auction_item_repository.get_latest_risk_assessment(
+        session, auction_item_id
+    )
     nearby_transactions = await auction_item_repository.get_nearby_transactions(
         session, item.sido, item.sigungu
     )

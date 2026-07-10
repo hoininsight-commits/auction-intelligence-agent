@@ -1,4 +1,5 @@
 """user_watchlist 테이블 모델 (지시서 §6.8)."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -11,7 +12,9 @@ from app.models.base import Base
 
 class UserWatchlist(Base):
     __tablename__ = "user_watchlist"
-    __table_args__ = (UniqueConstraint("user_id", "auction_item_id", name="uq_user_watchlist_user_item"),)
+    __table_args__ = (
+        UniqueConstraint("user_id", "auction_item_id", name="uq_user_watchlist_user_item"),
+    )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     user_id: Mapped[int] = mapped_column(

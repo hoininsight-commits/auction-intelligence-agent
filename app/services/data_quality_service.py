@@ -10,6 +10,7 @@
   7. 중복 사건번호가 있는지 확인
   8. 예상 낙찰가가 없는 active 물건 수 확인
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

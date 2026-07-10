@@ -1,4 +1,5 @@
 """notifications 테이블 모델 (지시서 §6.14)."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -25,7 +26,9 @@ class Notification(Base):
     title: Mapped[str | None] = mapped_column(String(200))
     message: Mapped[str | None] = mapped_column(Text)
 
-    status: Mapped[str | None] = mapped_column(String(50), default="pending", server_default="pending")
+    status: Mapped[str | None] = mapped_column(
+        String(50), default="pending", server_default="pending"
+    )
     scheduled_at: Mapped[datetime | None] = mapped_column()
     sent_at: Mapped[datetime | None] = mapped_column()
 

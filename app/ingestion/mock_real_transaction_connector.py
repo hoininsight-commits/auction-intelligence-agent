@@ -3,6 +3,7 @@
 실제 국토부 실거래가 API 연동 없이 샘플 실거래가 데이터를 반환한다.
 ENABLE_MOCK_CONNECTORS=true일 때 사용된다.
 """
+
 from __future__ import annotations
 
 from typing import Any

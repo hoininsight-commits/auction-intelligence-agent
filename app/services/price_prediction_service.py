@@ -12,6 +12,7 @@
 사실상 항상 "낮음"만 나오므로, 실제로 high/medium/low가 골고루 나오도록
 기준을 완화해서 사용한다 (아래 _determine_confidence 참고).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -86,28 +87,32 @@ class PricePredictionService:
         # ------------------------------------------------------------------
         # §8.2 기본 공식: 유사 사례 -> 최저가 배수 -> 카테고리 기본 낙찰가율
         # ------------------------------------------------------------------
-        base_price, base_method = self._compute_base_price(
-            auction_item, similar_pairs, explanation
-        )
+        base_price, base_method = self._compute_base_price(auction_item, similar_pairs, explanation)
 
         # ------------------------------------------------------------------
         # §8.4~§8.8 보정계수
         # ------------------------------------------------------------------
         fail_count = auction_item.fail_count or 0
         fail_coefficient = FAIL_COUNT_COEFFICIENT.get(fail_count, FAIL_COUNT_COEFFICIENT_5_PLUS)
-        explanation.append(f"유찰 {fail_count}회 물건의 보정계수({fail_coefficient})를 적용했습니다.")
+        explanation.append(
+            f"유찰 {fail_count}회 물건의 보정계수({fail_coefficient})를 적용했습니다."
+        )
 
         risk_level = risk_assessment.risk_level or "unknown"
         risk_coefficient = RISK_COEFFICIENT.get(risk_level, RISK_COEFFICIENT["unknown"])
         if risk_level == "unknown":
             explanation.append("권리 위험도 정보가 부족하여 보수적 범위를 적용했습니다.")
         else:
-            explanation.append(f"권리 위험도({risk_level})에 따른 보정계수({risk_coefficient})를 적용했습니다.")
+            explanation.append(
+                f"권리 위험도({risk_level})에 따른 보정계수({risk_coefficient})를 적용했습니다."
+            )
 
         region_coefficient = REGION_DEMAND_COEFFICIENT.get(
             auction_item.sido or "", REGION_DEMAND_COEFFICIENT["default"]
         )
-        explanation.append(f"지역({auction_item.sido or '기타'}) 수요 보정계수({region_coefficient})를 적용했습니다.")
+        explanation.append(
+            f"지역({auction_item.sido or '기타'}) 수요 보정계수({region_coefficient})를 적용했습니다."
+        )
 
         price_gap_coefficient = self._compute_price_gap_coefficient(
             auction_item, transactions, explanation
@@ -123,7 +128,9 @@ class PricePredictionService:
         # §8.10 신뢰도 (MVP 완화 기준)
         # ------------------------------------------------------------------
         confidence = self._determine_confidence(len(similar_pairs), len(transactions))
-        explanation.append(f"유사 낙찰 사례 {len(similar_pairs)}건, 인근 실거래가 {len(transactions)}건을 근거로 신뢰도를 '{confidence}'로 산정했습니다.")
+        explanation.append(
+            f"유사 낙찰 사례 {len(similar_pairs)}건, 인근 실거래가 {len(transactions)}건을 근거로 신뢰도를 '{confidence}'로 산정했습니다."
+        )
 
         # ------------------------------------------------------------------
         # §8.9 예측 범위
@@ -249,7 +256,9 @@ class PricePredictionService:
         appraisal_price = auction_item.appraisal_price
         deal_prices = [t.deal_price for t in transactions if t.deal_price]
         if not appraisal_price or not deal_prices:
-            explanation.append("인근 실거래가 데이터가 없어 시세괴리 보정계수는 적용하지 않았습니다(1.00).")
+            explanation.append(
+                "인근 실거래가 데이터가 없어 시세괴리 보정계수는 적용하지 않았습니다(1.00)."
+            )
             return PRICE_GAP_COEFFICIENT_NO_DATA
 
         avg_deal_price = sum(deal_prices) / len(deal_prices)

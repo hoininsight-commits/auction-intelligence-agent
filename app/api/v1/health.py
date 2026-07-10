@@ -1,4 +1,5 @@
 """Health Check API (지시서 §7.1)."""
+
 from fastapi import APIRouter
 
 from app.core.constants import SERVICE_NAME

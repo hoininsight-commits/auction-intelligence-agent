@@ -1,4 +1,5 @@
 """경매 물건 검색 비즈니스 로직 (지시서 §7.2)."""
+
 from __future__ import annotations
 
 import math
@@ -76,7 +77,9 @@ async def search_auction_items(
         "max_risk_level": max_risk_level,
     }
 
-    rows, total = await auction_item_repository.search_auction_items(session, filters, sort, page, limit)
+    rows, total = await auction_item_repository.search_auction_items(
+        session, filters, sort, page, limit
+    )
 
     items = [
         AuctionItemSearchItem(

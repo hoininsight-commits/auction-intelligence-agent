@@ -1,4 +1,5 @@
 """Health 테스트 (지시서 §13.1)."""
+
 from __future__ import annotations
 
 from httpx import AsyncClient

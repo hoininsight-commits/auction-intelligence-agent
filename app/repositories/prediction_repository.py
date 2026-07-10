@@ -1,4 +1,5 @@
 """price_predictions / risk_assessments DB 접근 계층 (지시서 §6.7, §6.12, §8)."""
+
 from __future__ import annotations
 
 from sqlalchemy import select

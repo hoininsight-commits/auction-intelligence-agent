@@ -6,6 +6,7 @@ Phase 1: health 라우터만 등록한다. 아래 나머지 라우터들은 각 
     Phase 3: auction_items, watchlist, saved_searches, profitability
     Phase 4: predictions, admin
 """
+
 from fastapi import APIRouter
 
 from app.api.v1 import (

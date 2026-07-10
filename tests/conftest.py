@@ -9,6 +9,7 @@
 - 세션 시작 시 스키마를 1회 재생성하고, 매 테스트 종료 후 전체 테이블을
   TRUNCATE하여 테스트 간 데이터가 섞이지 않도록 한다.
 """
+
 from __future__ import annotations
 
 import os

@@ -14,6 +14,7 @@
 8. 위험도 샘플 3건
 9. 예측 결과 샘플 3건
 """
+
 import asyncio
 from datetime import date, datetime, timedelta, timezone
 
@@ -275,61 +276,65 @@ async def seed() -> None:
         )
 
         # 6. 실거래가 샘플 10건
-        property_transactions = [
-            PropertyTransaction(
-                property_type="apartment",
-                address="서울특별시 강남구 대치동 316",
-                sido="서울특별시",
-                sigungu="강남구",
-                eupmyeondong="대치동",
-                complex_name="은마아파트",
-                exclusive_area=84.43,
-                deal_price=2_350_000_000 - i * 20_000_000,
-                deal_year=2024,
-                deal_month=(i % 12) + 1,
-                deal_day=(i % 27) + 1,
-                floor_info=f"{5 + i}",
-                build_year=1979,
-                source="molit",
-            )
-            for i in range(4)
-        ] + [
-            PropertyTransaction(
-                property_type="apartment",
-                address="서울특별시 마포구 상암동 1595",
-                sido="서울특별시",
-                sigungu="마포구",
-                eupmyeondong="상암동",
-                complex_name="월드컵파크 3단지",
-                exclusive_area=59.96,
-                deal_price=1_150_000_000 - i * 15_000_000,
-                deal_year=2024,
-                deal_month=(i % 12) + 1,
-                deal_day=(i % 27) + 1,
-                floor_info=f"{3 + i}",
-                build_year=2002,
-                source="molit",
-            )
-            for i in range(3)
-        ] + [
-            PropertyTransaction(
-                property_type="villa",
-                address="경기도 수원시 팔달구 매교동 45-3",
-                sido="경기도",
-                sigungu="수원시 팔달구",
-                eupmyeondong="매교동",
-                complex_name=None,
-                exclusive_area=45.2,
-                deal_price=295_000_000 - i * 5_000_000,
-                deal_year=2024,
-                deal_month=(i % 12) + 1,
-                deal_day=(i % 27) + 1,
-                floor_info=f"{2 + i}",
-                build_year=2010,
-                source="molit",
-            )
-            for i in range(3)
-        ]
+        property_transactions = (
+            [
+                PropertyTransaction(
+                    property_type="apartment",
+                    address="서울특별시 강남구 대치동 316",
+                    sido="서울특별시",
+                    sigungu="강남구",
+                    eupmyeondong="대치동",
+                    complex_name="은마아파트",
+                    exclusive_area=84.43,
+                    deal_price=2_350_000_000 - i * 20_000_000,
+                    deal_year=2024,
+                    deal_month=(i % 12) + 1,
+                    deal_day=(i % 27) + 1,
+                    floor_info=f"{5 + i}",
+                    build_year=1979,
+                    source="molit",
+                )
+                for i in range(4)
+            ]
+            + [
+                PropertyTransaction(
+                    property_type="apartment",
+                    address="서울특별시 마포구 상암동 1595",
+                    sido="서울특별시",
+                    sigungu="마포구",
+                    eupmyeondong="상암동",
+                    complex_name="월드컵파크 3단지",
+                    exclusive_area=59.96,
+                    deal_price=1_150_000_000 - i * 15_000_000,
+                    deal_year=2024,
+                    deal_month=(i % 12) + 1,
+                    deal_day=(i % 27) + 1,
+                    floor_info=f"{3 + i}",
+                    build_year=2002,
+                    source="molit",
+                )
+                for i in range(3)
+            ]
+            + [
+                PropertyTransaction(
+                    property_type="villa",
+                    address="경기도 수원시 팔달구 매교동 45-3",
+                    sido="경기도",
+                    sigungu="수원시 팔달구",
+                    eupmyeondong="매교동",
+                    complex_name=None,
+                    exclusive_area=45.2,
+                    deal_price=295_000_000 - i * 5_000_000,
+                    deal_year=2024,
+                    deal_month=(i % 12) + 1,
+                    deal_day=(i % 27) + 1,
+                    floor_info=f"{2 + i}",
+                    build_year=2010,
+                    source="molit",
+                )
+                for i in range(3)
+            ]
+        )
         session.add_all(property_transactions)
 
         # 7. 낙찰 결과 샘플 10건 (샘플 물건 6건에 순환 배정)
@@ -343,7 +348,9 @@ async def seed() -> None:
                 AuctionResult(
                     auction_item_id=item.id,
                     result_status=status,
-                    winning_price=int(item.minimum_price * (winning_rate / 100)) if item.minimum_price else None,
+                    winning_price=int(item.minimum_price * (winning_rate / 100))
+                    if item.minimum_price
+                    else None,
                     winning_rate=winning_rate,
                     bidder_count=1 + (i % 6),
                     result_date=date(2024, ((i % 12) + 1), (i % 27) + 1),

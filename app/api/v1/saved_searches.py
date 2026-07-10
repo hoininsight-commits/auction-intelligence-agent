@@ -1,4 +1,5 @@
 """저장 검색 라우터 (지시서 §7.6)."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status

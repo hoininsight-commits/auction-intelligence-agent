@@ -1,4 +1,5 @@
 """참고 낙찰가 예측 Pydantic v2 스키마 (지시서 §7.4, §8)."""
+
 from __future__ import annotations
 
 from datetime import datetime

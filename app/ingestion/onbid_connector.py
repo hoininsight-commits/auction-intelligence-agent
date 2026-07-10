@@ -18,6 +18,7 @@
 공개된 API 가이드(PublicDataReader 오픈소스 프로젝트의 Kamco 문서)를 근거로 작성했다.
 실제 연동 전에는 data.go.kr에서 최신 요청/응답 명세(특히 필드명)를 반드시 재확인해야 한다.
 """
+
 from __future__ import annotations
 
 from datetime import datetime

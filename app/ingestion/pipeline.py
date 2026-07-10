@@ -7,6 +7,7 @@
     4. auction_items(경매/공매) 또는 property_transactions(실거래가) 정규화 및 upsert
     5. collection_jobs 로그 저장
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -31,6 +32,7 @@ logger = get_logger(__name__)
 def _utcnow_naive() -> datetime:
     """DB timestamp 컬럼이 timezone-naive이므로 tz 정보를 제거한 UTC 시각을 반환한다."""
     return datetime.now(timezone.utc).replace(tzinfo=None)
+
 
 # pipeline에서 사용하는 "논리적" source 이름 -> 실제 connector.source 매핑을 위한 별칭.
 _ONBID_ALIASES = {"onbid"}

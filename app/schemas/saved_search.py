@@ -1,4 +1,5 @@
 """저장 검색 Pydantic v2 스키마 (지시서 §7.6)."""
+
 from __future__ import annotations
 
 from datetime import datetime

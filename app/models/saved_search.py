@@ -1,4 +1,5 @@
 """saved_searches 테이블 모델 (지시서 §6.9)."""
+
 from __future__ import annotations
 
 from datetime import datetime

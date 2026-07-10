@@ -3,6 +3,7 @@
 크롤링 구현 금지(지시서 §1, §9.1) — 법적 리스크가 있는 스크레이핑은 이 프로젝트 범위 밖이다.
 공식 API가 제공되지 않는 한 이 Connector는 인터페이스만 존재하며 실제 fetch 로직은 구현하지 않는다.
 """
+
 from __future__ import annotations
 
 from typing import Any

@@ -1,4 +1,5 @@
 """관심 물건 API 테스트 (지시서 §13.6, §7.5)."""
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
@@ -33,7 +34,9 @@ async def _make_item(db_session: AsyncSession, case_number: str = "2024타경400
     return item
 
 
-async def test_add_to_watchlist(client: AsyncClient, db_session: AsyncSession, test_user: User) -> None:
+async def test_add_to_watchlist(
+    client: AsyncClient, db_session: AsyncSession, test_user: User
+) -> None:
     item = await _make_item(db_session)
 
     response = await client.post(
@@ -61,12 +64,18 @@ async def test_add_duplicate_watchlist_is_rejected(
     assert second.status_code == 409
 
 
-async def test_list_watchlist(client: AsyncClient, db_session: AsyncSession, test_user: User) -> None:
+async def test_list_watchlist(
+    client: AsyncClient, db_session: AsyncSession, test_user: User
+) -> None:
     item1 = await _make_item(db_session, case_number="2024타경4002")
     item2 = await _make_item(db_session, case_number="2024타경4003")
 
-    await client.post("/api/v1/watchlist", json={"user_id": test_user.id, "auction_item_id": item1.id})
-    await client.post("/api/v1/watchlist", json={"user_id": test_user.id, "auction_item_id": item2.id})
+    await client.post(
+        "/api/v1/watchlist", json={"user_id": test_user.id, "auction_item_id": item1.id}
+    )
+    await client.post(
+        "/api/v1/watchlist", json={"user_id": test_user.id, "auction_item_id": item2.id}
+    )
 
     response = await client.get("/api/v1/watchlist", params={"user_id": test_user.id})
 
@@ -77,9 +86,13 @@ async def test_list_watchlist(client: AsyncClient, db_session: AsyncSession, tes
     assert ids == {item1.id, item2.id}
 
 
-async def test_delete_watchlist(client: AsyncClient, db_session: AsyncSession, test_user: User) -> None:
+async def test_delete_watchlist(
+    client: AsyncClient, db_session: AsyncSession, test_user: User
+) -> None:
     item = await _make_item(db_session, case_number="2024타경4004")
-    await client.post("/api/v1/watchlist", json={"user_id": test_user.id, "auction_item_id": item.id})
+    await client.post(
+        "/api/v1/watchlist", json={"user_id": test_user.id, "auction_item_id": item.id}
+    )
 
     response = await client.delete(f"/api/v1/watchlist/{item.id}", params={"user_id": test_user.id})
     assert response.status_code == 204

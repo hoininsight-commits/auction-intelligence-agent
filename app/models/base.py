@@ -2,6 +2,7 @@
 
 모든 모델은 이 Base를 상속한다. Alembic의 target_metadata도 이 Base.metadata를 참조한다.
 """
+
 from sqlalchemy.orm import DeclarativeBase
 
 

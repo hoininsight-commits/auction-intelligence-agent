@@ -1,4 +1,5 @@
 """경매 물건 검색/상세 라우터 (지시서 §7.2, §7.3)."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query

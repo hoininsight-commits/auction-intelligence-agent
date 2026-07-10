@@ -3,6 +3,7 @@
 Phase 1: 엔진/세션/FastAPI 의존성(get_db)만 구성한다.
 실제 테이블 모델(Base의 하위 클래스)은 Phase 2에서 app/models/base.py에 정의된다.
 """
+
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import (

@@ -1,4 +1,5 @@
 """vehicle_details 테이블 모델 (지시서 §6.5)."""
+
 from __future__ import annotations
 
 from datetime import datetime

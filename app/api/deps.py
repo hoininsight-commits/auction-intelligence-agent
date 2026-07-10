@@ -1,4 +1,5 @@
 """FastAPI 공용 의존성."""
+
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession

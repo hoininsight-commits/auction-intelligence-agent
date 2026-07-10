@@ -3,6 +3,7 @@
 Phase 1: 설정 골격만 구현. DB/Redis 연결에 사용되는 값만 실제로 사용되며,
 나머지(API 키 등)는 Phase 5 Connector 구현에서 사용된다.
 """
+
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -20,12 +21,8 @@ class Settings(BaseSettings):
     APP_ENV: str = "local"
     DEBUG: bool = True
 
-    DATABASE_URL: str = (
-        "postgresql+psycopg://auction:auction@postgres:5432/auction_db"
-    )
-    TEST_DATABASE_URL: str = (
-        "postgresql+psycopg://auction:auction@postgres:5432/auction_test_db"
-    )
+    DATABASE_URL: str = "postgresql+psycopg://auction:auction@postgres:5432/auction_db"
+    TEST_DATABASE_URL: str = "postgresql+psycopg://auction:auction@postgres:5432/auction_test_db"
 
     REDIS_URL: str = "redis://redis:6379/0"
 
@@ -44,13 +41,9 @@ class Settings(BaseSettings):
     def async_database_url(self) -> str:
         """asyncpg 드라이버를 사용하는 async SQLAlchemy 엔진용 URL로 변환."""
         if self.DATABASE_URL.startswith("postgresql+psycopg://"):
-            return self.DATABASE_URL.replace(
-                "postgresql+psycopg://", "postgresql+asyncpg://", 1
-            )
+            return self.DATABASE_URL.replace("postgresql+psycopg://", "postgresql+asyncpg://", 1)
         if self.DATABASE_URL.startswith("postgresql://"):
-            return self.DATABASE_URL.replace(
-                "postgresql://", "postgresql+asyncpg://", 1
-            )
+            return self.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
         return self.DATABASE_URL
 
 

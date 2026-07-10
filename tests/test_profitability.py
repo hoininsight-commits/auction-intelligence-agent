@@ -13,6 +13,7 @@
 공식으로 재계산하면 맞지 않는다(공식대로면 7,750,000이 나와야 함). 실제 구현은 예시가 아니라
 공식을 따르고 있으며, 아래 테스트도 공식 기준으로 직접 계산한 기대값을 사용한다.
 """
+
 from __future__ import annotations
 
 from httpx import AsyncClient
@@ -77,7 +78,9 @@ async def test_profitability_holding_months_zero_is_validation_error(client: Asy
     assert response.status_code == 422
 
 
-async def test_profitability_holding_months_negative_is_validation_error(client: AsyncClient) -> None:
+async def test_profitability_holding_months_negative_is_validation_error(
+    client: AsyncClient,
+) -> None:
     payload = {**PAYLOAD, "holding_months": -3}
 
     response = await client.post("/api/v1/profitability/calculate", json=payload)

@@ -1,4 +1,5 @@
 """saved_searches DB 접근 계층 (지시서 §7.6)."""
+
 from __future__ import annotations
 
 from typing import Any

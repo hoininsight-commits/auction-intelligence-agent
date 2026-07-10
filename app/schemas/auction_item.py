@@ -2,6 +2,7 @@
 
 검색 API(§7.2)/상세 API(§7.3) 응답 필드 구성은 지시서 예시와 정확히 일치시킨다.
 """
+
 from __future__ import annotations
 
 from datetime import date, datetime

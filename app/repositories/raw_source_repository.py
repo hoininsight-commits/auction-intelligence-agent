@@ -2,6 +2,7 @@
 
 외부 데이터는 정규화 이전에 반드시 이 저장소를 통해 raw_source_records에 원본 그대로 저장한다.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -64,7 +65,9 @@ class RawSourceRepository:
         for item in items:
             record = await self.save_raw_record(
                 source=source,
-                source_record_id=str(item.get(id_field)) if item.get(id_field) is not None else None,
+                source_record_id=str(item.get(id_field))
+                if item.get(id_field) is not None
+                else None,
                 record_type=record_type,
                 raw_payload=item,
             )

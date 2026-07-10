@@ -3,6 +3,7 @@
 MVP에서는 Celery 구조만 잡는다 (지시서 §1). REDIS_URL을 broker/backend로 사용하며,
 실제 스케줄 트리거(celery beat)는 app/ingestion/scheduler.py에 구조만 정의되어 있다.
 """
+
 from __future__ import annotations
 
 from celery import Celery

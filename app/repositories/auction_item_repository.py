@@ -4,6 +4,7 @@
 최근 위험도(risk_assessments)는 Phase 4 서비스 완성을 기다리지 않고 이 레포지토리에서
 직접 SELECT 해서 채운다.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -112,7 +113,9 @@ def _build_filtered_query(filters: dict[str, Any]) -> tuple[Select, Any, Any]:
     if filters.get("max_risk_level"):
         max_order = RISK_LEVEL_ORDER.get(filters["max_risk_level"])
         if max_order is not None:
-            allowed_levels = [level for level, order in RISK_LEVEL_ORDER.items() if order <= max_order]
+            allowed_levels = [
+                level for level, order in RISK_LEVEL_ORDER.items() if order <= max_order
+            ]
             stmt = stmt.where(RiskAssessment.risk_level.in_(allowed_levels))
 
     return stmt, latest_pred, latest_risk
@@ -153,7 +156,9 @@ async def get_auction_item_by_id(session: AsyncSession, auction_item_id: int) ->
     return (await session.execute(stmt)).scalar_one_or_none()
 
 
-async def get_latest_prediction(session: AsyncSession, auction_item_id: int) -> PricePrediction | None:
+async def get_latest_prediction(
+    session: AsyncSession, auction_item_id: int
+) -> PricePrediction | None:
     stmt = (
         select(PricePrediction)
         .where(PricePrediction.auction_item_id == auction_item_id)
@@ -163,7 +168,9 @@ async def get_latest_prediction(session: AsyncSession, auction_item_id: int) -> 
     return (await session.execute(stmt)).scalar_one_or_none()
 
 
-async def get_latest_risk_assessment(session: AsyncSession, auction_item_id: int) -> RiskAssessment | None:
+async def get_latest_risk_assessment(
+    session: AsyncSession, auction_item_id: int
+) -> RiskAssessment | None:
     stmt = (
         select(RiskAssessment)
         .where(RiskAssessment.auction_item_id == auction_item_id)

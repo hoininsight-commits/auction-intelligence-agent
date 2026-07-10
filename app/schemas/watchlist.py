@@ -1,4 +1,5 @@
 """관심 물건 Pydantic v2 스키마 (지시서 §7.5)."""
+
 from __future__ import annotations
 
 from datetime import datetime

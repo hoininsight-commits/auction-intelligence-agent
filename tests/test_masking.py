@@ -1,4 +1,5 @@
 """개인정보 마스킹 유틸 테스트 (conventions.md, .claude/commands/mask-check.md)."""
+
 from __future__ import annotations
 
 from app.core.masking import mask_text, mask_value

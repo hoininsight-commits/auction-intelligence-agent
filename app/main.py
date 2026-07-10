@@ -1,4 +1,5 @@
 """Auction Intelligence Agent — FastAPI 애플리케이션 엔트리포인트."""
+
 from pathlib import Path
 
 from fastapi import FastAPI

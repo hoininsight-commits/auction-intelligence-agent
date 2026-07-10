@@ -1,4 +1,5 @@
 """raw_source_records 테이블 모델 (지시서 §6.10)."""
+
 from __future__ import annotations
 
 from datetime import datetime

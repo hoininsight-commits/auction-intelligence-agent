@@ -1,4 +1,5 @@
 """관심 물건 라우터 (지시서 §7.5)."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status

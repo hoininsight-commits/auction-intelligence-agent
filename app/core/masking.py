@@ -5,21 +5,18 @@
 주민등록번호, 한국 차량번호판, "라벨: 이름" 형태의 성명 표기)만 다룬다. `/mask-check` 커맨드로
 누락 여부를 주기적으로 점검한다.
 """
+
 from __future__ import annotations
 
 import re
 from typing import Any
 
-_PHONE_PATTERN = re.compile(
-    r"(?:\+?82[-\s]?)?0(?:2|1\d|[3-6]\d|70)[-\s]?\d{3,4}[-\s]?\d{4}"
-)
+_PHONE_PATTERN = re.compile(r"(?:\+?82[-\s]?)?0(?:2|1\d|[3-6]\d|70)[-\s]?\d{3,4}[-\s]?\d{4}")
 
 _RRN_PATTERN = re.compile(r"\b\d{6}[-\s]?[1-4]\d{6}\b")
 
 # 한국 차량 번호판: "12가3456", "123가4567", 지역명 포함 "서울12가3456" 등
-_VEHICLE_PLATE_PATTERN = re.compile(
-    r"(?:[가-힣]{2}\s?)?\d{2,3}\s?[가-힣]\s?\d{4}"
-)
+_VEHICLE_PLATE_PATTERN = re.compile(r"(?:[가-힣]{2}\s?)?\d{2,3}\s?[가-힣]\s?\d{4}")
 
 _NAME_LABELS = ("임차인", "소유자", "채무자", "점유자", "성명", "이름", "명의자")
 _NAME_LABEL_PATTERN = re.compile(

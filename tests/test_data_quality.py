@@ -1,4 +1,5 @@
 """데이터 품질 API 테스트 (지시서 §13.8, §7.8, §10)."""
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
@@ -67,7 +68,9 @@ async def test_data_quality_missing_coordinates_count(
 async def test_data_quality_past_bid_date_active_status_count(
     client: AsyncClient, db_session: AsyncSession
 ) -> None:
-    future_active = _base_item(case_number="2024타경5005", bid_date=NOW + timedelta(days=5), status="active")
+    future_active = _base_item(
+        case_number="2024타경5005", bid_date=NOW + timedelta(days=5), status="active"
+    )
     past_active = _base_item(
         case_number="2024타경5006", bid_date=NOW - timedelta(days=5), status="active"
     )

@@ -1,4 +1,5 @@
 """관심 물건 서비스 (지시서 §7.5)."""
+
 from __future__ import annotations
 
 from sqlalchemy.exc import IntegrityError

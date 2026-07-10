@@ -2,6 +2,7 @@
 
 요청/응답 필드명 및 계산식은 지시서 §7.7 예시와 정확히 일치시킨다.
 """
+
 from __future__ import annotations
 
 from pydantic import BaseModel, Field

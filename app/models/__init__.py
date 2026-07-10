@@ -4,6 +4,7 @@ Alembic autogenerate 및 애플리케이션 전역에서 `from app.models import
 `from app.models import Base, AuctionItem, ...` 형태로 사용할 수 있도록
 모든 모델을 이 모듈에서 재노출한다.
 """
+
 from app.models.auction_item import AuctionItem
 from app.models.auction_result import AuctionResult
 from app.models.base import Base

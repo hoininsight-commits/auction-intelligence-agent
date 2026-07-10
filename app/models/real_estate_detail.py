@@ -1,4 +1,5 @@
 """real_estate_details 테이블 모델 (지시서 §6.4)."""
+
 from __future__ import annotations
 
 from datetime import date, datetime

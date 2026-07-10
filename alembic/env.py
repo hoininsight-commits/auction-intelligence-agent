@@ -3,6 +3,7 @@
 app.models.base.Base.metadata에 연결되어 있으며, 모든 모델은 app.models를 통해
 import되어 있어야 autogenerate가 전체 스키마를 인식한다.
 """
+
 from logging.config import fileConfig
 
 from alembic import context

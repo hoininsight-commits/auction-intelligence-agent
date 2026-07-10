@@ -2,6 +2,7 @@
 
 Phase 2: 최소한의 Read/Create 형태만 정의. 인증 관련 API 스키마는 이후 phase에서 필요 시 확장한다.
 """
+
 from __future__ import annotations
 
 from datetime import datetime

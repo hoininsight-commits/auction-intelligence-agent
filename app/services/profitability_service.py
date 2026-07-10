@@ -14,6 +14,7 @@ annualized_roi = roi * 12 / holding_months
 break_even_sale_price = purchase_price + total_cost + interest_cost - expected_rental_income
 safety_margin = expected_sale_price - break_even_sale_price
 """
+
 from __future__ import annotations
 
 from app.core.disclaimers import PROFITABILITY_DISCLAIMER
@@ -23,7 +24,9 @@ from app.schemas.profitability import (
 )
 
 
-def calculate_profitability(request: ProfitabilityCalculateRequest) -> ProfitabilityCalculateResponse:
+def calculate_profitability(
+    request: ProfitabilityCalculateRequest,
+) -> ProfitabilityCalculateResponse:
     total_cost = (
         request.acquisition_tax
         + request.legal_fee
@@ -35,11 +38,7 @@ def calculate_profitability(request: ProfitabilityCalculateRequest) -> Profitabi
     equity = request.purchase_price - request.loan_amount
 
     interest_cost = (
-        request.loan_amount
-        * request.annual_interest_rate
-        / 100
-        * request.holding_months
-        / 12
+        request.loan_amount * request.annual_interest_rate / 100 * request.holding_months / 12
     )
 
     total_investment = equity + total_cost

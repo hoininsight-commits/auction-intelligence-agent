@@ -2,6 +2,7 @@
 
 모든 Connector(Mock/실제)는 이 추상 클래스를 상속한다.
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

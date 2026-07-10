@@ -1,4 +1,5 @@
 """auction_items 테이블 모델 (지시서 §6.3)."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -48,7 +49,9 @@ class AuctionItem(Base):
     bid_location: Mapped[str | None] = mapped_column(Text)
     fail_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
-    status: Mapped[str | None] = mapped_column(String(50), default="active", server_default="active")
+    status: Mapped[str | None] = mapped_column(
+        String(50), default="active", server_default="active"
+    )
 
     view_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     watch_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")

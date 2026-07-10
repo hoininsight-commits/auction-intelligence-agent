@@ -1,4 +1,5 @@
 """저장 검색 API 테스트 (지시서 §13.7, §7.6)."""
+
 from __future__ import annotations
 
 from httpx import AsyncClient
@@ -64,7 +65,9 @@ async def test_update_saved_search(client: AsyncClient, test_user: User) -> None
     assert body["filters"] == {"category": "apartment"}
 
 
-async def test_update_saved_search_not_found_returns_404(client: AsyncClient, test_user: User) -> None:
+async def test_update_saved_search_not_found_returns_404(
+    client: AsyncClient, test_user: User
+) -> None:
     response = await client.put(
         "/api/v1/saved-searches/999999",
         json={"name": "존재하지 않음"},
@@ -89,7 +92,11 @@ async def test_delete_saved_search(client: AsyncClient, test_user: User) -> None
     assert listing.json() == []
 
 
-async def test_delete_saved_search_not_found_returns_404(client: AsyncClient, test_user: User) -> None:
-    response = await client.delete("/api/v1/saved-searches/999999", params={"user_id": test_user.id})
+async def test_delete_saved_search_not_found_returns_404(
+    client: AsyncClient, test_user: User
+) -> None:
+    response = await client.delete(
+        "/api/v1/saved-searches/999999", params={"user_id": test_user.id}
+    )
 
     assert response.status_code == 404

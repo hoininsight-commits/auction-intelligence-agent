@@ -4,6 +4,7 @@ MVP 스텁: 실제 스케줄링 트리거(cron, celery beat 등)는 구현하지
 어떤 source를 어떤 주기로 수집해야 하는지 구조만 정의해 두고,
 실제 트리거는 후속 작업(celery beat 설정 등)에서 연결한다.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

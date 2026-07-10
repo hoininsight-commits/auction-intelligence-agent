@@ -1,4 +1,5 @@
 """수익률 계산 라우터 (지시서 §7.7)."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter

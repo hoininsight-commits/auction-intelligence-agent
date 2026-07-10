@@ -1,4 +1,5 @@
 """참고 낙찰가 예측 API 테스트 (지시서 §13.4, §8)."""
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
@@ -11,7 +12,9 @@ from app.models import AuctionItem
 NOW = datetime.now(timezone.utc).replace(tzinfo=None)
 
 
-async def test_predict_price_from_appraisal_price(client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_predict_price_from_appraisal_price(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
     """유사 낙찰 사례/최저가 배수 데이터가 없으면 감정가 × 카테고리 기본 낙찰가율로 계산한다 (§8.2)."""
     item = AuctionItem(
         source="court",
@@ -80,7 +83,9 @@ async def test_predict_price_falls_back_to_minimum_price(
     assert body["predicted_price_mid"] > 0
 
 
-async def test_predict_price_includes_disclaimer(client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_predict_price_includes_disclaimer(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
     item = AuctionItem(
         source="court",
         auction_type="real_estate",
