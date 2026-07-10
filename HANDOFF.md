@@ -33,7 +33,7 @@
 ## 알려진 이슈 / 다음 세션 후보
 1. **온비드/국토부 API 실호출 미검증** — 실제 서비스키(`ONBID_API_KEY`, `MOLIT_API_KEY`)가 없어서 파싱 로직만 목업으로 검증됨. data.go.kr에서 키 발급 후 실제 호출 테스트 필요. 발급 경로는 `.env.example`의 해당 키 주석 참고.
 2. ~~국토부 커넥터 법정동코드 매핑이 9개 시군구만 하드코딩됨~~ → 2026-07-11 전국 250개 시/군/구로 확장 완료 (`real_transaction_connector.py`의 `_LAWD_CD_MAP`). 세종시 등 구/군 없는 지역은 sido 단독 매핑으로 처리. **단, 이번 세션엔 Docker/pytest/ruff가 없어 `/run-checks` 미실행** — 다음 세션에서 Docker 환경으로 재검증 필요.
-3. **ruff F821 10건 미해결** — `app/models/{vehicle_detail,real_estate_detail,risk_assessment}.py` 등에서 `Mapped["AuctionItem"]` 문자열 forward-ref를 ruff가 오탐. 런타임 정상 동작하며 기능상 문제 없음. `TYPE_CHECKING` 가드로 import하면 해소 가능.
+3. ~~ruff F821 10건 미해결~~ → 2026-07-11 해소: `app/models/{auction_item,auction_result,real_estate_detail,vehicle_detail,price_prediction,risk_assessment}.py` 6개 파일에 `TYPE_CHECKING` 가드 import 추가 (순환 import 없음, 런타임 동작 영향 없음). **Docker/ruff 없는 환경이라 `ruff check`로 0건 확인은 못 함** — 다음 세션에서 재검증 필요.
 4. **cron/스케줄러 미연결** — `app/workers/celery_app.py`, `app/ingestion/scheduler.py` 구조는 있지만 실제 주기 실행(Celery Beat 등)은 안 붙어있음. 데이터 수집은 수동 트리거만 가능.
 5. **§7.7 수익률 API 지시서 예시 오류** — 지시서의 `safety_margin` 예시값(42,000,000)이 지시서 자신의 공식과 안 맞음(공식대로면 7,750,000). 코드는 공식 기준으로 구현 — 이게 맞는 것으로 최종 결정됨, 재논의 불필요.
 
