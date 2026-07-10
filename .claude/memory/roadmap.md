@@ -22,5 +22,6 @@
 - [x] 개인정보 마스킹(`app/core/masking.py`) 구현, `raw_source_records` 저장 경로 적용, 실 DB 검증 완료
 - [x] pytest 테스트DB 격리 버그 수정 (dev DB 오염 방지)
 - [x] ruff 도입 + 자동 수정 가능한 미사용 import 정리 (남은 10건은 SQLAlchemy 문자열 forward-ref false positive, `TYPE_CHECKING` 가드 추가로 해소 가능 — 다음 세션 후보)
+- [x] 국토부 커넥터 법정동코드 매핑 전국 확장 (`real_transaction_connector.py`의 `_LAWD_CD_MAP`, 9개 → 250개 시/군/구). `/run-checks`는 Docker 있는 환경에서 재검증 필요.
 
 각 작업 완료 시 `/run-checks` 실행 후 `progress.md` 갱신 + git commit/push.
