@@ -1,5 +1,6 @@
 # Auction Intelligence Agent — Claude Code 진입점
 
+> **세션 시작 전 반드시 `HANDOFF.md`를 먼저 읽으세요** — 현재 작업 상태, 알려진 이슈, 다음 할 일이 기록되어 있습니다.
 > 이 파일은 짧게 유지한다. 상세 규칙은 `.claude/memory/*.md`를 필요할 때만 읽는다.
 > 원본 스펙 1차 출처는 `docs/개발지시서-v1.0.md` — 이 파일과 어긋나면 지시서를 따른다.
 
