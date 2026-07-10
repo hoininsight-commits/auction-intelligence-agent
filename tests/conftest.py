@@ -16,9 +16,12 @@ import os
 _DEFAULT_TEST_DATABASE_URL = "postgresql+psycopg://auction:auction@localhost:5432/auction_test_db"
 
 # docker-compose 없이 로컬에서 pytest를 실행하는 경우를 기본값으로 하되,
-# 이미 환경변수로 TEST_DATABASE_URL / DATABASE_URL이 설정되어 있으면 존중한다.
+# 이미 환경변수로 TEST_DATABASE_URL이 설정되어 있으면 그 값을 존중한다.
+# DATABASE_URL은 항상 강제로 테스트 DB를 가리키도록 덮어쓴다 (setdefault를 쓰면
+# docker-compose의 .env가 이미 DATABASE_URL=auction_db를 세팅해둔 상태라 무시되고,
+# 아래 스키마 재생성/TRUNCATE가 실서비스 DB를 대상으로 실행되는 사고가 난다).
 os.environ.setdefault("TEST_DATABASE_URL", _DEFAULT_TEST_DATABASE_URL)
-os.environ.setdefault("DATABASE_URL", os.environ["TEST_DATABASE_URL"])
+os.environ["DATABASE_URL"] = os.environ["TEST_DATABASE_URL"]
 
 from collections.abc import AsyncGenerator  # noqa: E402
 

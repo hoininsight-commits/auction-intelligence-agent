@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auction Intelligence Agent — 관리자</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --border: #d9dce1;
+    --bg-card: #ffffff;
+    --bg-page: #f4f5f7;
+    --text-muted: #6b7280;
+    --accent: #2563eb;
+    --danger: #b91c1c;
+    --warn-bg: #fff7ed;
+    --warn-border: #fdba74;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --border: #3a3f47;
+      --bg-card: #1e2126;
+      --bg-page: #14161a;
+      --text-muted: #9aa1ab;
+      --accent: #60a5fa;
+      --danger: #f87171;
+      --warn-bg: #2a2213;
+      --warn-border: #92662a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Pretendard, Roboto, sans-serif;
+    background: var(--bg-page);
+    color: inherit;
+  }
+  header.topbar {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-card);
+  }
+  header.topbar h1 {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+  }
+  .disclaimer {
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-top: 10px;
+  }
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+  section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  section h2 {
+    margin-top: 0;
+    font-size: 16px;
+  }
+  .quality-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .quality-card {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+  }
+  .quality-card .value {
+    font-size: 22px;
+    font-weight: 600;
+  }
+  .quality-card .label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .filters input, .filters select {
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    font-size: 13px;
+  }
+  .filters button {
+    padding: 6px 14px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  tbody tr {
+    cursor: pointer;
+  }
+  tbody tr:hover {
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+  }
+  .pagination {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    font-size: 13px;
+  }
+  .pagination button {
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: inherit;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .pagination button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .muted { color: var(--text-muted); }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    border: 1px solid var(--border);
+  }
+  .risk-low { color: #15803d; }
+  .risk-medium { color: #b45309; }
+  .risk-high { color: var(--danger); }
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px;
+    overflow-y: auto;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: var(--bg-card);
+    border-radius: 8px;
+    max-width: 700px;
+    width: 100%;
+    padding: 24px;
+    border: 1px solid var(--border);
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+  .modal-header button {
+    border: none;
+    background: transparent;
+    font-size: 20px;
+    cursor: pointer;
+    color: inherit;
+  }
+  dl.detail-grid {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 6px 12px;
+    font-size: 13px;
+    margin: 0 0 16px 0;
+  }
+  dl.detail-grid dt { color: var(--text-muted); }
+  dl.detail-grid dd { margin: 0; }
+  .detail-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 16px 0 6px 0;
+  }
+  .risk-factors { margin: 4px 0 0 18px; padding: 0; font-size: 13px; }
+  .error-box {
+    color: var(--danger);
+    font-size: 13px;
+  }
+  .loading { color: var(--text-muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <h1>Auction Intelligence Agent — 관리자 페이지</h1>
+  <div class="disclaimer">
+    본 서비스의 예상 낙찰가, 수익률, 권리분석, 위험도 정보는 참고용입니다. 실제 입찰 및 투자 결정은
+    사용자의 책임이며, 입찰 전 법무사, 변호사, 세무사 등 전문가 검토를 권장합니다. 본 서비스는 낙찰 결과나
+    투자 수익을 보장하지 않습니다.
+  </div>
+</header>
+
+<main>
+  <section id="quality-section">
+    <h2>데이터 품질 요약</h2>
+    <div id="quality-status" class="loading">불러오는 중...</div>
+    <div id="quality-grid" class="quality-grid"></div>
+  </section>
+
+  <section id="list-section">
+    <h2>경매 물건 목록</h2>
+    <div class="filters">
+      <input type="text" id="filter-sido" placeholder="시/도 (예: 서울특별시)" />
+      <select id="filter-category">
+        <option value="">전체 카테고리</option>
+        <option value="apartment">apartment</option>
+        <option value="villa">villa</option>
+        <option value="officetel">officetel</option>
+        <option value="commercial">commercial</option>
+        <option value="land">land</option>
+        <option value="factory">factory</option>
+        <option value="vehicle">vehicle</option>
+      </select>
+      <select id="filter-status">
+        <option value="">전체 상태</option>
+        <option value="active">active</option>
+        <option value="sold">sold</option>
+        <option value="cancelled">cancelled</option>
+        <option value="failed">failed</option>
+      </select>
+      <button id="search-btn" type="button">검색</button>
+    </div>
+    <div id="list-status" class="loading">불러오는 중...</div>
+    <table id="items-table" style="display:none;">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>사건번호</th>
+          <th>제목</th>
+          <th>지역</th>
+          <th>감정가</th>
+          <th>최저가</th>
+          <th>유찰</th>
+          <th>입찰일</th>
+          <th>위험도</th>
+          <th>상태</th>
+        </tr>
+      </thead>
+      <tbody id="items-tbody"></tbody>
+    </table>
+    <div class="pagination" id="pagination" style="display:none;">
+      <button id="prev-page" type="button">이전</button>
+      <span id="page-info" class="muted"></span>
+      <button id="next-page" type="button">다음</button>
+    </div>
+  </section>
+</main>
+
+<div class="overlay" id="detail-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="detail-title" style="margin:0;">물건 상세</h2>
+      <button id="detail-close" type="button" aria-label="닫기">&times;</button>
+    </div>
+    <div id="detail-body"><div class="loading">불러오는 중...</div></div>
+  </div>
+</div>
+
+<script>
+const API_BASE = "/api/v1";
+let currentPage = 1;
+let totalPages = 1;
+const PAGE_LIMIT = 20;
+
+function fmtNumber(n) {
+  if (n === null || n === undefined) return "-";
+  return Number(n).toLocaleString("ko-KR");
+}
+
+function fmtDate(s) {
+  if (!s) return "-";
+  try {
+    return new Date(s).toLocaleString("ko-KR");
+  } catch (e) {
+    return s;
+  }
+}
+
+function riskClass(level) {
+  if (level === "low") return "risk-low";
+  if (level === "medium") return "risk-medium";
+  if (level === "high" || level === "critical") return "risk-high";
+  return "";
+}
+
+const QUALITY_LABELS = {
+  total_items: "전체 물건 수",
+  missing_appraisal_price: "감정가 누락",
+  missing_minimum_price: "최저가 누락",
+  missing_coordinates: "좌표 누락",
+  past_bid_date_active_status: "입찰일 경과 active",
+  duplicate_case_numbers: "중복 사건번호",
+  prediction_missing: "예측 누락",
+  invalid_minimum_price_over_appraisal: "최저가>감정가 오류",
+  missing_address: "주소 누락",
+};
+
+async function loadQualitySummary() {
+  const statusEl = document.getElementById("quality-status");
+  const gridEl = document.getElementById("quality-grid");
+  try {
+    const res = await fetch(`${API_BASE}/admin/data-quality/summary`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    statusEl.style.display = "none";
+    gridEl.innerHTML = "";
+    Object.keys(QUALITY_LABELS).forEach((key) => {
+      if (!(key in data)) return;
+      const card = document.createElement("div");
+      card.className = "quality-card";
+      card.innerHTML = `<div class="value">${fmtNumber(data[key])}</div><div class="label">${QUALITY_LABELS[key]}</div>`;
+      gridEl.appendChild(card);
+    });
+  } catch (err) {
+    statusEl.textContent = `데이터 품질 정보를 불러오지 못했습니다: ${err.message}`;
+    statusEl.className = "error-box";
+  }
+}
+
+function buildQuery(page) {
+  const params = new URLSearchParams();
+  const sido = document.getElementById("filter-sido").value.trim();
+  const category = document.getElementById("filter-category").value;
+  const status = document.getElementById("filter-status").value;
+  if (sido) params.set("sido", sido);
+  if (category) params.set("category", category);
+  if (status) params.set("status", status);
+  params.set("page", page);
+  params.set("limit", PAGE_LIMIT);
+  return params.toString();
+}
+
+async function loadItems(page = 1) {
+  const statusEl = document.getElementById("list-status");
+  const table = document.getElementById("items-table");
+  const pagination = document.getElementById("pagination");
+  const tbody = document.getElementById("items-tbody");
+  statusEl.style.display = "block";
+  statusEl.className = "loading";
+  statusEl.textContent = "불러오는 중...";
+  table.style.display = "none";
+  pagination.style.display = "none";
+
+  try {
+    const qs = buildQuery(page);
+    const res = await fetch(`${API_BASE}/auction-items?${qs}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const items = data.items || [];
+    tbody.innerHTML = "";
+    items.forEach((item) => {
+      const tr = document.createElement("tr");
+      tr.dataset.id = item.id;
+      const region = [item.sido, item.sigungu].filter(Boolean).join(" ");
+      tr.innerHTML = `
+        <td>${item.id}</td>
+        <td>${item.case_number ?? "-"}</td>
+        <td>${item.title ?? "-"}</td>
+        <td>${region || "-"}</td>
+        <td>${fmtNumber(item.appraisal_price)}</td>
+        <td>${fmtNumber(item.minimum_price)}</td>
+        <td>${item.fail_count ?? 0}</td>
+        <td>${fmtDate(item.bid_date)}</td>
+        <td><span class="badge ${riskClass(item.risk_level)}">${item.risk_level ?? "-"}</span></td>
+        <td>${item.status ?? "-"}</td>
+      `;
+      tr.addEventListener("click", () => openDetail(item.id));
+      tbody.appendChild(tr);
+    });
+
+    if (items.length === 0) {
+      statusEl.textContent = "검색 결과가 없습니다.";
+      statusEl.className = "muted";
+      statusEl.style.display = "block";
+    } else {
+      statusEl.style.display = "none";
+      table.style.display = "table";
+    }
+
+    const pg = data.pagination || {};
+    currentPage = pg.page || page;
+    totalPages = pg.total_pages || 1;
+    document.getElementById("page-info").textContent =
+      `${currentPage} / ${totalPages} 페이지 (총 ${fmtNumber(pg.total)}건)`;
+    document.getElementById("prev-page").disabled = currentPage <= 1;
+    document.getElementById("next-page").disabled = currentPage >= totalPages;
+    pagination.style.display = "flex";
+  } catch (err) {
+    statusEl.textContent = `목록을 불러오지 못했습니다: ${err.message}`;
+    statusEl.className = "error-box";
+  }
+}
+
+async function openDetail(id) {
+  const overlay = document.getElementById("detail-overlay");
+  const body = document.getElementById("detail-body");
+  const title = document.getElementById("detail-title");
+  title.textContent = `물건 상세 (ID: ${id})`;
+  body.innerHTML = '<div class="loading">불러오는 중...</div>';
+  overlay.classList.add("open");
+
+  try {
+    const res = await fetch(`${API_BASE}/auction-items/${id}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const d = await res.json();
+    title.textContent = `${d.title ?? "물건 상세"} (ID: ${d.id})`;
+
+    let html = `<dl class="detail-grid">
+      <dt>사건번호</dt><dd>${d.case_number ?? "-"} ${d.item_number ? "(" + d.item_number + ")" : ""}</dd>
+      <dt>출처</dt><dd>${d.source ?? "-"}</dd>
+      <dt>유형</dt><dd>${d.auction_type ?? "-"} / ${d.category ?? "-"}</dd>
+      <dt>주소</dt><dd>${d.address ?? "-"}</dd>
+      <dt>감정가</dt><dd>${fmtNumber(d.appraisal_price)}</dd>
+      <dt>최저가</dt><dd>${fmtNumber(d.minimum_price)}</dd>
+      <dt>보증금</dt><dd>${fmtNumber(d.deposit_price)}</dd>
+      <dt>유찰횟수</dt><dd>${d.fail_count ?? 0}</dd>
+      <dt>입찰일</dt><dd>${fmtDate(d.bid_date)}</dd>
+    </dl>`;
+
+    if (d.real_estate_detail) {
+      const rd = d.real_estate_detail;
+      html += `<div class="detail-section-title">부동산 상세</div><dl class="detail-grid">
+        <dt>전용면적</dt><dd>${rd.exclusive_area ?? "-"}</dd>
+        <dt>층 정보</dt><dd>${rd.floor_info ?? "-"}</dd>
+        <dt>사용승인일</dt><dd>${rd.approval_date ?? "-"}</dd>
+        <dt>용도</dt><dd>${rd.usage_type ?? "-"}</dd>
+      </dl>`;
+    }
+    if (d.vehicle_detail) {
+      html += `<div class="detail-section-title">차량 상세</div>
+        <pre style="font-size:12px;white-space:pre-wrap;">${JSON.stringify(d.vehicle_detail, null, 2)}</pre>`;
+    }
+
+    if (d.latest_prediction) {
+      const p = d.latest_prediction;
+      html += `<div class="detail-section-title">예상 낙찰가 (최신)</div><dl class="detail-grid">
+        <dt>낮음</dt><dd>${fmtNumber(p.predicted_price_low)} (${p.predicted_rate_low ?? "-"}%)</dd>
+        <dt>중앙</dt><dd>${fmtNumber(p.predicted_price_mid)} (${p.predicted_rate_mid ?? "-"}%)</dd>
+        <dt>높음</dt><dd>${fmtNumber(p.predicted_price_high)} (${p.predicted_rate_high ?? "-"}%)</dd>
+        <dt>신뢰도</dt><dd>${p.confidence ?? "-"}</dd>
+        <dt>모델버전</dt><dd>${p.model_version ?? "-"}</dd>
+      </dl>`;
+    } else {
+      html += `<div class="detail-section-title">예상 낙찰가</div><div class="muted">예측 데이터가 없습니다.</div>`;
+    }
+
+    if (d.risk_assessment) {
+      const r = d.risk_assessment;
+      const factors = (r.risk_factors || []).map((f) => `<li>${f}</li>`).join("");
+      html += `<div class="detail-section-title">권리 위험도</div>
+        <div><span class="badge ${riskClass(r.risk_level)}">${r.risk_level ?? "-"}</span></div>
+        <ul class="risk-factors">${factors}</ul>`;
+    }
+
+    if (Array.isArray(d.nearby_transactions) && d.nearby_transactions.length > 0) {
+      html += `<div class="detail-section-title">유사 실거래가</div><table><thead><tr>
+        <th>단지</th><th>면적</th><th>거래가</th><th>거래일</th></tr></thead><tbody>`;
+      d.nearby_transactions.forEach((t) => {
+        html += `<tr>
+          <td>${t.complex_name ?? "-"}</td>
+          <td>${t.exclusive_area ?? "-"}</td>
+          <td>${fmtNumber(t.deal_price)}</td>
+          <td>${[t.deal_year, t.deal_month, t.deal_day].filter(Boolean).join("-")}</td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+
+    if (d.disclaimer) {
+      html += `<div class="disclaimer" style="margin-top:16px;">${d.disclaimer}</div>`;
+    }
+
+    body.innerHTML = html;
+  } catch (err) {
+    body.innerHTML = `<div class="error-box">상세 정보를 불러오지 못했습니다: ${err.message}</div>`;
+  }
+}
+
+document.getElementById("detail-close").addEventListener("click", () => {
+  document.getElementById("detail-overlay").classList.remove("open");
+});
+document.getElementById("detail-overlay").addEventListener("click", (e) => {
+  if (e.target.id === "detail-overlay") {
+    e.currentTarget.classList.remove("open");
+  }
+});
+document.getElementById("search-btn").addEventListener("click", () => loadItems(1));
+document.getElementById("prev-page").addEventListener("click", () => {
+  if (currentPage > 1) loadItems(currentPage - 1);
+});
+document.getElementById("next-page").addEventListener("click", () => {
+  if (currentPage < totalPages) loadItems(currentPage + 1);
+});
+
+loadQualitySummary();
+loadItems(1);
+</script>
+</body>
+</html>

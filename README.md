@@ -31,6 +31,7 @@ docker compose up -d
 alembic upgrade head
 python -m app.seed.seed_sample_data
 # http://localhost:8000/docs
+# 관리자 페이지: http://localhost:8000/admin
 ```
 
 ### Docker 없이 로컬에서 실행
