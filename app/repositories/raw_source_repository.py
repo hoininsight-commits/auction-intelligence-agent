@@ -11,6 +11,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.masking import mask_value
 from app.models.raw_source_record import RawSourceRecord
 
 
@@ -32,13 +33,19 @@ class RawSourceRepository:
         record_type: str | None,
         raw_payload: dict[str, Any],
     ) -> RawSourceRecord:
-        """원본 페이로드를 raw_source_records에 저장한다 (매 fetch마다 새 행 추가)."""
+        """원본 페이로드를 raw_source_records에 저장한다 (매 fetch마다 새 행 추가).
+
+        저장 전 개인정보 마스킹(app.core.masking)을 적용한다 — 채무자/소유자/임차인 이름,
+        연락처, 차량번호, 주민등록번호 패턴이 원문에 섞여 있어도 마스킹된 형태로만 보존한다
+        (conventions.md 보안/개인정보 원칙).
+        """
+        masked_payload = mask_value(raw_payload)
         record = RawSourceRecord(
             source=source,
             source_record_id=source_record_id,
             record_type=record_type,
-            raw_payload=raw_payload,
-            checksum=_compute_checksum(raw_payload),
+            raw_payload=masked_payload,
+            checksum=_compute_checksum(masked_payload),
         )
         self.session.add(record)
         await self.session.flush()

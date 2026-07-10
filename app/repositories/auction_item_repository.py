@@ -6,7 +6,6 @@
 """
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Any
 
 from sqlalchemy import Select, and_, func, select
@@ -18,9 +17,7 @@ from app.models import (
     AuctionItem,
     PricePrediction,
     PropertyTransaction,
-    RealEstateDetail,
     RiskAssessment,
-    VehicleDetail,
 )
 
 SORT_OPTIONS: dict[str, tuple[Any, str]] = {
