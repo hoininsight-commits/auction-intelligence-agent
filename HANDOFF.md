@@ -4,13 +4,16 @@
 
 ## 마지막 업데이트
 2026-07-10 — 이 Mac(`imtaehun-ui-MacBookPro`)에서 MVP 전체 구현 + 후순위 기능 일부 + Docker 실기동 검증까지 완료한 상태.
+2026-07-11 — 집 Mac(Mac mini, M4)에 Homebrew+Docker Desktop 신규 설치, `/run-checks` 전체 재검증 완료 (아래 참고).
 
 ## 지금 상태 (한눈에)
 - **저장소**: https://github.com/hoininsight-commits/auction-intelligence-agent (public)
-- **최신 커밋**: `ab6ce81` "Claude Code 프로젝트 설정 세트 도입 + 개인정보 마스킹 구현"
-- **working tree**: clean (미커밋 변경 없음)
-- **pytest**: 37/37 통과 (health/검색/상세/예측/수익률/관심물건/저장검색/데이터품질/마스킹)
-- **Docker**: `docker compose up` 실제 기동 검증 완료 (app/postgres/redis 3개 컨테이너)
+- **최신 커밋**: `6af4e80` "ruff F821 forward-ref 오탐 10건 해소 (TYPE_CHECKING 가드 import)" (이번 세션 README 수정 커밋 예정)
+- **working tree**: README.md 수정 커밋 대기 중 (테스트 DB 생성 안내 추가)
+- **pytest**: 37/37 통과 (집 Mac, Docker 신규 설치 환경에서 재검증 완료)
+- **ruff check(lint)**: 통과 (F821 0건). **ruff format --check**: 75개 파일 불일치 — 기존 스타일 드리프트, 알려진 이슈 5번 참고
+- **Docker**: 집 Mac(Mac mini, M4)에 Homebrew+Docker Desktop 신규 설치 후 `docker compose up -d --build` 정상 기동 검증 완료 (app/postgres/redis 3개 컨테이너)
+- **테스트 DB**: `auction_test_db`는 `docker compose up`만으로는 생성되지 않음 — 최초 1회 `docker compose exec postgres psql -U auction -d auction_db -c "CREATE DATABASE auction_test_db;"` 필요 (README에 안내 추가)
 
 ## 완료된 작업
 1. **MVP Phase 1~6** (지시서 `docs/개발지시서-v1.0.md` 기준) — 전부 완료
@@ -32,10 +35,11 @@
 
 ## 알려진 이슈 / 다음 세션 후보
 1. **온비드/국토부 API 실호출 미검증** — 실제 서비스키(`ONBID_API_KEY`, `MOLIT_API_KEY`)가 없어서 파싱 로직만 목업으로 검증됨. data.go.kr에서 키 발급 후 실제 호출 테스트 필요. 발급 경로는 `.env.example`의 해당 키 주석 참고.
-2. ~~국토부 커넥터 법정동코드 매핑이 9개 시군구만 하드코딩됨~~ → 2026-07-11 전국 250개 시/군/구로 확장 완료 (`real_transaction_connector.py`의 `_LAWD_CD_MAP`). 세종시 등 구/군 없는 지역은 sido 단독 매핑으로 처리. **단, 이번 세션엔 Docker/pytest/ruff가 없어 `/run-checks` 미실행** — 다음 세션에서 Docker 환경으로 재검증 필요.
-3. ~~ruff F821 10건 미해결~~ → 2026-07-11 해소: `app/models/{auction_item,auction_result,real_estate_detail,vehicle_detail,price_prediction,risk_assessment}.py` 6개 파일에 `TYPE_CHECKING` 가드 import 추가 (순환 import 없음, 런타임 동작 영향 없음). **Docker/ruff 없는 환경이라 `ruff check`로 0건 확인은 못 함** — 다음 세션에서 재검증 필요.
+2. ~~국토부 커넥터 법정동코드 매핑이 9개 시군구만 하드코딩됨~~ → 2026-07-11 전국 250개 시/군/구로 확장 완료 (`real_transaction_connector.py`의 `_LAWD_CD_MAP`). 세종시 등 구/군 없는 지역은 sido 단독 매핑으로 처리. **`/run-checks`로 재검증 완료** (아래 참고).
+3. ~~ruff F821 10건 미해결~~ → 2026-07-11 해소: `app/models/{auction_item,auction_result,real_estate_detail,vehicle_detail,price_prediction,risk_assessment}.py` 6개 파일에 `TYPE_CHECKING` 가드 import 추가 (순환 import 없음, 런타임 동작 영향 없음). **`ruff check` 0건 확인 완료** (아래 참고).
 4. **cron/스케줄러 미연결** — `app/workers/celery_app.py`, `app/ingestion/scheduler.py` 구조는 있지만 실제 주기 실행(Celery Beat 등)은 안 붙어있음. 데이터 수집은 수동 트리거만 가능.
-5. **§7.7 수익률 API 지시서 예시 오류** — 지시서의 `safety_margin` 예시값(42,000,000)이 지시서 자신의 공식과 안 맞음(공식대로면 7,750,000). 코드는 공식 기준으로 구현 — 이게 맞는 것으로 최종 결정됨, 재논의 불필요.
+5. **`ruff format --check` 전체 미통과 (75개 파일)** — 2026-07-11 `/run-checks`에서 처음 발견. `ruff check`(lint)는 전체 통과하지만 `ruff format`(포매팅)은 대부분 파일에서 "모듈 docstring 뒤 빈 줄 추가", "긴 줄을 88자 기준으로 재배치" 등 스타일 차이가 있음 — 지금까지 lint만 돌리고 format은 한 번도 실행/적용한 적이 없어서 쌓인 기존 코드 스타일 드리프트. 기능상 문제 없음. 일괄 `ruff format .` 적용 여부는 diff가 커서 사용자 확인 후 진행 권장.
+6. **§7.7 수익률 API 지시서 예시 오류** — 지시서의 `safety_margin` 예시값(42,000,000)이 지시서 자신의 공식과 안 맞음(공식대로면 7,750,000). 코드는 공식 기준으로 구현 — 이게 맞는 것으로 최종 결정됨, 재논의 불필요.
 
 ## 집에서 이어서 시작하는 법
 ```bash

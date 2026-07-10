@@ -59,9 +59,11 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 실제 PostgreSQL 테스트 DB(`.env`의 `TEST_DATABASE_URL`, 기본값은 `auction_test_db`)를
 사용합니다. 테스트 세션 시작 시 스키마를 재생성하고, 테스트마다 데이터를 TRUNCATE하여
-격리합니다.
+격리합니다. `docker compose up`이 만드는 DB는 `POSTGRES_DB`(기본 `auction_db`) 하나뿐이라,
+테스트 DB는 최초 1회 직접 생성해야 합니다.
 
 ```bash
+docker compose exec postgres psql -U auction -d auction_db -c "CREATE DATABASE auction_test_db;"
 pytest
 ```
 
