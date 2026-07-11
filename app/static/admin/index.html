@@ -268,6 +268,8 @@
           <th>유찰</th>
           <th>입찰일</th>
           <th>위험도</th>
+          <th>판정</th>
+          <th>조회/찜</th>
           <th>상태</th>
         </tr>
       </thead>
@@ -315,6 +317,19 @@ function riskClass(level) {
   if (level === "low") return "risk-low";
   if (level === "medium") return "risk-medium";
   if (level === "high" || level === "critical") return "risk-high";
+  return "";
+}
+
+const VERDICT_LABELS = { good: "우수", fair: "보통", caution: "주의" };
+
+function verdictLabel(verdict) {
+  return VERDICT_LABELS[verdict] ?? "-";
+}
+
+function verdictClass(verdict) {
+  if (verdict === "good") return "risk-low";
+  if (verdict === "fair") return "risk-medium";
+  if (verdict === "caution") return "risk-high";
   return "";
 }
 
@@ -397,6 +412,8 @@ async function loadItems(page = 1) {
         <td>${item.fail_count ?? 0}</td>
         <td>${fmtDate(item.bid_date)}</td>
         <td><span class="badge ${riskClass(item.risk_level)}">${item.risk_level ?? "-"}</span></td>
+        <td><span class="badge ${verdictClass(item.verdict)}">${verdictLabel(item.verdict)}</span></td>
+        <td>${fmtNumber(item.view_count ?? 0)} / ${fmtNumber(item.watch_count ?? 0)}</td>
         <td>${item.status ?? "-"}</td>
       `;
       tr.addEventListener("click", () => openDetail(item.id));
@@ -450,6 +467,7 @@ async function openDetail(id) {
       <dt>보증금</dt><dd>${fmtNumber(d.deposit_price)}</dd>
       <dt>유찰횟수</dt><dd>${d.fail_count ?? 0}</dd>
       <dt>입찰일</dt><dd>${fmtDate(d.bid_date)}</dd>
+      <dt>조회수 / 찜수</dt><dd>${fmtNumber(d.view_count ?? 0)} / ${fmtNumber(d.watch_count ?? 0)}</dd>
     </dl>`;
 
     if (d.real_estate_detail) {
@@ -474,6 +492,7 @@ async function openDetail(id) {
         <dt>높음</dt><dd>${fmtNumber(p.predicted_price_high)} (${p.predicted_rate_high ?? "-"}%)</dd>
         <dt>신뢰도</dt><dd>${p.confidence ?? "-"}</dd>
         <dt>모델버전</dt><dd>${p.model_version ?? "-"}</dd>
+        <dt>종합판정</dt><dd><span class="badge ${verdictClass(p.verdict)}">${verdictLabel(p.verdict)}</span></dd>
       </dl>`;
     } else {
       html += `<div class="detail-section-title">예상 낙찰가</div><div class="muted">예측 데이터가 없습니다.</div>`;
