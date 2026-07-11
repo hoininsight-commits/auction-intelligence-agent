@@ -3,15 +3,32 @@
 MVP에서는 Celery 구조만 잡고, 실제 작업(수집 파이프라인 실행)은 간단히 구현한다
 (지시서 §1). `app.ingestion.pipeline.collect_source_items`는 async 함수이므로
 Celery task 내부에서 `asyncio.run`으로 감싸서 실행한다.
+
+각 task 실행 끝에 `app.core.database.engine`을 `dispose()`한다: Celery worker는
+같은 프로세스에서 `asyncio.run()`을 반복 호출해 매번 새 이벤트 루프를 만드는데,
+SQLAlchemy 비동기 엔진의 커넥션 풀은 프로세스 전역으로 재사용되기 때문에 이전
+(이미 닫힌) 이벤트 루프에 묶인 커넥션을 다음 실행에서 재사용하려다
+"attached to a different loop" 에러가 발생한다. 매 실행 후 풀을 비우면 다음
+실행이 새 이벤트 루프에서 커넥션을 새로 맺으므로 이 문제가 사라진다.
 """
 
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Coroutine
 from typing import Any
 
 from app.ingestion.pipeline import collect_source_items
 from app.workers.celery_app import celery_app
+
+
+async def _run_and_dispose_engine(coro: Coroutine[Any, Any, Any]) -> Any:
+    from app.core.database import engine
+
+    try:
+        return await coro
+    finally:
+        await engine.dispose()
 
 
 @celery_app.task(name="app.workers.tasks.collect_source_items_task")
@@ -21,7 +38,18 @@ def collect_source_items_task(source: str, **connector_kwargs: Any) -> dict[str,
     connector_kwargs는 그대로 connector.fetch_items()에 전달된다 (예: 국토부
     실거래가 커넥터의 lawd_cd/sido+sigungu, deal_ymd).
     """
-    return asyncio.run(collect_source_items(source, **connector_kwargs))
+    return asyncio.run(_run_and_dispose_engine(collect_source_items(source, **connector_kwargs)))
+
+
+async def _collect_all_sources() -> list[dict[str, Any]]:
+    from app.ingestion.scheduler import get_schedule
+
+    results = []
+    for scheduled_job in get_schedule():
+        results.append(
+            await collect_source_items(scheduled_job.source, **scheduled_job.default_kwargs)
+        )
+    return results
 
 
 @celery_app.task(name="app.workers.tasks.collect_all_sources_task")
@@ -32,14 +60,7 @@ def collect_all_sources_task() -> list[dict[str, Any]]:
     지역)만 사용하는 간단한 버전이다. 국토부 실거래가를 전국 단위로 순회하려면
     `collect_real_transaction_all_regions_task`를 사용한다.
     """
-    from app.ingestion.scheduler import get_schedule
-
-    results = []
-    for scheduled_job in get_schedule():
-        results.append(
-            asyncio.run(collect_source_items(scheduled_job.source, **scheduled_job.default_kwargs))
-        )
-    return results
+    return asyncio.run(_run_and_dispose_engine(_collect_all_sources()))
 
 
 async def _collect_real_transaction_all_regions(deal_ymd: str | None) -> list[dict[str, Any]]:
@@ -74,4 +95,4 @@ def collect_real_transaction_all_regions_task(deal_ymd: str | None = None) -> li
     별도 collection_jobs 로그)이 생성된다. deal_ymd 미지정 시 각 호출은 커넥터
     기본값(이번 달)을 사용한다.
     """
-    return asyncio.run(_collect_real_transaction_all_regions(deal_ymd))
+    return asyncio.run(_run_and_dispose_engine(_collect_real_transaction_all_regions(deal_ymd)))

@@ -28,5 +28,6 @@
 - [x] `ruff format .` 일괄 적용 (75개 파일 스타일 드리프트 해소, 로직 변경 없음, ruff check/pytest 재확인 완료)
 - [x] `ENABLE_MOCK_CONNECTORS=false` 실제 데이터 수집 파이프라인 end-to-end 검증 (2026-07-11) — `collect_source_items`가 `**connector_kwargs`를 받아 커넥터에 전달하도록 확장, `tasks.py`/`scheduler.py`(`ScheduledJob.default_kwargs`)까지 관통. 온비드/국토부(서울 종로구) 둘 다 raw 저장→정규화 upsert→`collection_jobs` 로그까지 성공, 재실행 시 upsert 멱등성(`updated_count`)도 확인. `/run-checks` 재확인 완료
 - [x] cron/스케줄러 실제 연결 (2026-07-11) — `app/workers/celery_app.py`에 `beat_schedule` 추가(온비드 매시간, 국토부 실거래가 전국 순회 매일 새벽 3시), `real_transaction_connector.get_supported_regions()`으로 `_LAWD_CD_MAP` 250개 시/군/구 전체 순회 태스크(`collect_real_transaction_all_regions_task`) 구현. `docker-compose.yml`에 `worker`/`beat` 서비스 추가. 태스크 큐잉→워커 실행→결과 반환 및 지역별(세종 포함) 실제 호출 성공을 직접 검증, `/run-checks` 재확인 완료
+- [x] beat 실제 발화 로그 검증 + Celery async 이벤트 루프 버그 수정 (2026-07-11) — 9시간 실행 후 로그 확인 결과 온비드 매시간 트리거 중 절반이 `asyncio.run()` 반복 호출과 전역 SQLAlchemy `AsyncEngine` 커넥션 풀 재사용 충돌로 실패하던 것을 발견, `tasks.py`에 매 task 실행 후 `engine.dispose()`하는 헬퍼를 추가해 해결. 국토부 daily crontab은 beat 시작 시각 기준으로 다음날 03:00 KST 예약된 것을 확인(정상 동작, 버그 아님). `/run-checks` 재확인 완료
 
 각 작업 완료 시 `/run-checks` 실행 후 `progress.md` 갱신 + git commit/push.
