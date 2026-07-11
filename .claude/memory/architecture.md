@@ -16,8 +16,8 @@ source raw → `raw_source_records` 저장 → 정규화(`normalization_service`
 
 ## Connector 상태
 - `mock_onbid_connector.py` / `mock_real_transaction_connector.py`: 항상 사용 가능, `ENABLE_MOCK_CONNECTORS=true`(기본)일 때 우선.
-- `onbid_connector.py`: 실제 공공데이터포털 캠코 온비드 물건 조회 API(`getKamcoPbctCltrList`) 연동 완료. `ONBID_API_KEY` 필요.
-- `real_transaction_connector.py`: 실제 국토교통부 아파트매매 실거래상세 API(`getRTMSDataSvcAptTradeDev`) 연동 완료. `MOLIT_API_KEY` + 법정동코드(LAWD_CD, 하드코딩 매핑 9개 시군구) 필요.
+- `onbid_connector.py`: 실제 공공데이터포털 "차세대 온비드" 물건목록(`getRlstCltrList2`)/물건상세(`getCltrBidInf2`) API 연동, 2026-07-11 실제 서비스키로 호출 검증 완료. `ONBID_API_KEY` 필요.
+- `real_transaction_connector.py`: 실제 국토교통부 아파트매매 실거래가 상세 API(`getRTMSDataSvcAptTradeDev`) 연동, 2026-07-11 실제 서비스키로 호출 검증 완료. `MOLIT_API_KEY` + 법정동코드(LAWD_CD, 전국 250개 시/군/구 매핑) 필요.
 - `court_auction_connector.py`: 인터페이스만, 크롤링 금지 원칙에 따라 `NotImplementedError`.
 - `app/ingestion/pipeline.py`의 `collect_source_items(source)`가 팩토리 선택 → fetch → raw 저장 → 정규화 upsert → `collection_jobs` 로그를 담당. 커넥터 실패(config error/api error)는 pipeline이 잡아서 `collection_jobs.status="failed"`로 기록 — 앱 크래시 없음.
 

@@ -36,3 +36,6 @@ htmlcov/
 *.DS_Store
 
 *.log
+
+# 서비스키가 노출된 data.go.kr 활용신청/문서 캡처(개인 스크래치용, 커밋 금지)
+check/

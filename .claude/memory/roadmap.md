@@ -9,8 +9,8 @@
 6. 테스트/문서: pytest 31개 통과, README, `.env.example`, Swagger 확인, Docker 실기동 검증
 
 ## 후순위 기능 (지시서 §1.3) — 진행 상태
-- [x] 실제 온비드 API 연동 (`getKamcoPbctCltrList`)
-- [x] 실제 국토부 실거래가 API 연동 (`getRTMSDataSvcAptTradeDev`)
+- [x] 실제 온비드 API 연동 — "차세대 온비드" 물건목록(`getRlstCltrList2`)/물건상세(`getCltrBidInf2`), 2026-07-11 실호출 검증 완료 (예전에 참조하던 `getKamcoPbctCltrList` 데이터셋은 폐기되어 전면 재작성함)
+- [x] 실제 국토부 실거래가 API 연동 (`getRTMSDataSvcAptTradeDev`), 2026-07-11 실호출 검증 완료
 - [x] 관리자 웹 프론트엔드 (`/admin`, 정적 HTML/JS)
 - [ ] ML 모델 — 보류(실 낙찰 데이터 부족, 스킵 결정)
 - [ ] 푸시 알림 실연동 — 보류(수신 클라이언트 없음, 스킵 결정)

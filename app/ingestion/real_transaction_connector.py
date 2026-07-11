@@ -1,13 +1,13 @@
 """국토교통부 실거래가 실제 Connector.
 
 공공데이터포털(data.go.kr)에서 제공하는
-"국토교통부_아파트 매매 실거래상세 자료" Open API를 사용해
+"국토교통부_아파트 매매 실거래가 상세 자료" Open API를 사용해
 아파트 매매 실거래 내역을 조회하고, 지시서 §9.4 정규화 형태(dict)로 변환한다.
 
 - 제공기관: 국토교통부 — 공공데이터포털(data.go.kr) 경유로 제공
 - 신청/문서 페이지: https://www.data.go.kr/data/15126468/openapi.do
-  ("국토교통부_아파트 매매 실거래상세 자료")
-- 서비스 Base URL: http://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev
+  ("국토교통부_아파트 매매 실거래가 상세 자료")
+- 서비스 Base URL: https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev
 - 오퍼레이션: getRTMSDataSvcAptTradeDev
 - 인증 방식: data.go.kr에서 "일반 인증키(Decoding)"를 발급받아 `serviceKey` 쿼리
   파라미터로 전달 (개발/운영 계정 모두 자동승인, 개발계정 트래픽 10,000회/일)
@@ -15,16 +15,13 @@
   (선택: pageNo, numOfRows)
 - 응답 형식: XML (공공데이터포털 표준 openapi 스키마 - response/header/body/items/item)
 
-주요 응답 필드(아파트 매매 실거래상세 자료, 공개된 API 가이드 기준):
+주요 응답 필드(아파트 매매 실거래가 상세 자료, 공개된 API 가이드 기준):
     aptNm(단지명), umdNm(법정동/읍면동명), jibun(지번), roadNm(도로명),
     excluUseAr(전용면적, m^2), dealAmount(거래금액, "만원" 단위 문자열 - 쉼표 포함),
     dealYear/dealMonth/dealDay(계약년/월/일), floor(층), buildYear(건축년도),
     sggCd(시군구코드)
 
-주의: 이 구현은 실제 서비스키를 발급받지 못한 상태에서, data.go.kr 카탈로그 설명 및
-공개된 API 가이드(PublicDataReader 오픈소스 프로젝트, 공공데이터 활용 블로그 등)를
-근거로 작성했다. 실제 연동 전에는 data.go.kr에서 최신 요청/응답 명세를 반드시
-재확인해야 한다.
+2026-07-11 실제 서비스키로 호출해 정상 응답(XML, resultCode 000/OK)을 확인했다.
 
 아파트 외 매물종별(연립다세대/오피스텔/단독다가구 등)은 국토교통부가 각각 별도의
 Open API 서비스로 제공한다(예: 연립다세대 매매 실거래가 자료, 오피스텔 매매
@@ -49,7 +46,7 @@ from app.ingestion.base import BaseConnector
 
 logger = get_logger(__name__)
 
-MOLIT_BASE_URL = "http://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev"
+MOLIT_BASE_URL = "https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev"
 MOLIT_OPERATION = "getRTMSDataSvcAptTradeDev"
 
 # 시군구명 -> 법정동시군구코드(LAWD_CD, 5자리) 매핑 테이블. 전국 시/군/구 단위로
@@ -516,7 +513,7 @@ class RealTransactionConnector(BaseConnector):
     ) -> dict[str, Any]:
         """국토부 원본 필드를 지시서 §9.4 정규화 dict 형태로 변환한다.
 
-        참고한 원본 필드(아파트 매매 실거래상세 자료 API 가이드 기준):
+        참고한 원본 필드(아파트 매매 실거래가 상세 자료 API 가이드 기준):
             aptNm(단지명), umdNm(법정동/읍면동명), jibun(지번), roadNm(도로명),
             sggCd(시군구코드), excluUseAr(전용면적, m^2),
             dealAmount(거래금액, "만원" 단위 문자열 - 쉼표 포함), dealYear/dealMonth/dealDay,

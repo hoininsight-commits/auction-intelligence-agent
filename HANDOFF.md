@@ -34,7 +34,14 @@
 - 법원 경매 크롤링 — **영구 금지** (지시서 원칙, 법적 리스크)
 
 ## 알려진 이슈 / 다음 세션 후보
-1. **온비드/국토부 API 실호출 미검증** — 실제 서비스키(`ONBID_API_KEY`, `MOLIT_API_KEY`)가 없어서 파싱 로직만 목업으로 검증됨. data.go.kr에서 키 발급 후 실제 호출 테스트 필요. 발급 경로는 `.env.example`의 해당 키 주석 참고.
+1. ~~온비드/국토부 API 실호출 미검증~~ → 2026-07-11 실제 서비스키로 검증 완료.
+   - **국토부 실거래가**: 기존 구현 그대로 정상 동작. Base URL을 http → https로 수정.
+   - **온비드**: 기존 코드가 참조하던 데이터셋(`data.go.kr/data/15000851`, 오퍼레이션 `getKamcoPbctCltrList`)이 **폐기**되어 404. 실제로는 "차세대 온비드" API 2종으로 이전됨 — `app/ingestion/onbid_connector.py`를 전면 재작성:
+     - 물건목록: `https://apis.data.go.kr/B010003/OnbidRlstListSrvc2/getRlstCltrList2` (필수 파라미터 `prptDivCd`, `pvctTrgtYn`)
+     - 물건상세: `https://apis.data.go.kr/B010003/OnbidCltrBidDtlSrvc2/getCltrBidInf2` (필수 파라미터 `cltrMngNo`, `pbctCdtnNo`, 물건목록 응답에서 얻음)
+     - `source_item_id` 형식이 `{cltrMngNo}::{pbctCdtnNo}`로 변경됨 (cltrMngNo 자체에 하이픈이 있어 `-` 대신 `::` 구분자 사용)
+     - 물건상세 오퍼레이션은 소재지/감정가/용도 필드를 내려주지 않음 — 목록 조회 결과와 병합 필요(현재는 목록 필드만으로 정규화, 상세는 입찰 조건 위주)
+   - 실제 호출로 국토부/온비드 둘 다 정상 응답 확인. `.env.example`/`.env`에 실제 서비스키 반영, `/run-checks` 재검증 완료 (ruff/format/pytest 37/37 통과)
 2. ~~국토부 커넥터 법정동코드 매핑이 9개 시군구만 하드코딩됨~~ → 2026-07-11 전국 250개 시/군/구로 확장 완료 (`real_transaction_connector.py`의 `_LAWD_CD_MAP`). 세종시 등 구/군 없는 지역은 sido 단독 매핑으로 처리. **`/run-checks`로 재검증 완료** (아래 참고).
 3. ~~ruff F821 10건 미해결~~ → 2026-07-11 해소: `app/models/{auction_item,auction_result,real_estate_detail,vehicle_detail,price_prediction,risk_assessment}.py` 6개 파일에 `TYPE_CHECKING` 가드 import 추가 (순환 import 없음, 런타임 동작 영향 없음). **`ruff check` 0건 확인 완료** (아래 참고).
 4. **cron/스케줄러 미연결** — `app/workers/celery_app.py`, `app/ingestion/scheduler.py` 구조는 있지만 실제 주기 실행(Celery Beat 등)은 안 붙어있음. 데이터 수집은 수동 트리거만 가능.
