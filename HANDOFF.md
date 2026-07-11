@@ -8,7 +8,7 @@
 
 ## 지금 상태 (한눈에)
 - **저장소**: https://github.com/hoininsight-commits/auction-intelligence-agent (public)
-- **최신 커밋**: `0896eb9` "cron/스케줄러 실제 연결(Celery Beat) + 국토부 실거래가 전국 순회 구현"
+- **최신 커밋**: `1b4efb5` "Celery worker의 asyncio 이벤트 루프 충돌 버그 수정"
 - **working tree**: clean (미커밋 변경 없음)
 - **pytest**: 37/37 통과. **ruff check/format**: 둘 다 통과
 - **Docker**: 집 Mac(Mac mini, M4)에 Homebrew+Docker Desktop 신규 설치, `docker compose up -d --build` 정상 기동 검증 완료. `worker`/`beat` 서비스도 추가되어 함께 기동됨.
