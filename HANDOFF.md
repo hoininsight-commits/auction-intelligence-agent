@@ -9,7 +9,7 @@
 
 ## 지금 상태 (한눈에)
 - **저장소**: https://github.com/hoininsight-commits/auction-intelligence-agent (public)
-- **최신 커밋**: `4fdbebb` "종합판정 배지(verdict: good/fair/caution) 구현"
+- **최신 커밋**: `8baaf71` "관리자 페이지에 종합판정 배지 및 조회수/찜수 표시 추가"
 - **working tree**: clean (미커밋 변경 없음)
 - **pytest**: 37/37 통과. **ruff check/format**: 둘 다 통과
 - **Docker**: 집 Mac(Mac mini, M4)에 Homebrew+Docker Desktop 신규 설치, `docker compose up -d --build` 정상 기동 검증 완료. `worker`/`beat` 서비스도 추가되어 함께 기동됨.
