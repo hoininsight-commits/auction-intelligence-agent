@@ -4,16 +4,17 @@
 
 ## 마지막 업데이트
 2026-07-10 — 이 Mac(`imtaehun-ui-MacBookPro`)에서 MVP 전체 구현 + 후순위 기능 일부 + Docker 실기동 검증까지 완료한 상태.
-2026-07-11 — 집 Mac(Mac mini, M4)에 Homebrew+Docker Desktop 신규 설치, `/run-checks` 전체 재검증 완료 (아래 참고).
+2026-07-11 — 집 Mac(Mac mini, M4)에 Homebrew+Docker Desktop 신규 설치, `/run-checks` 전체 재검증 완료. 이어서 온비드/국토부 실거래가 API 실제 서비스키로 실호출 검증 완료, 온비드 커넥터 전면 재작성 (아래 참고).
 
 ## 지금 상태 (한눈에)
 - **저장소**: https://github.com/hoininsight-commits/auction-intelligence-agent (public)
-- **최신 커밋**: `900d3e2` "ruff format . 일괄 적용 (75개 파일 스타일 통일)"
+- **최신 커밋**: `ff37d20` "온비드/국토부 실거래가 API 실호출 검증, 온비드 커넥터 전면 재작성"
 - **working tree**: clean (미커밋 변경 없음)
-- **pytest**: 37/37 통과 (집 Mac, Docker 신규 설치 환경에서 재검증 완료)
-- **ruff check(lint) / ruff format --check**: 둘 다 통과 (F821 0건, 스타일 드리프트 해소)
-- **Docker**: 집 Mac(Mac mini, M4)에 Homebrew+Docker Desktop 신규 설치 후 `docker compose up -d --build` 정상 기동 검증 완료 (app/postgres/redis 3개 컨테이너)
+- **pytest**: 37/37 통과. **ruff check/format**: 둘 다 통과
+- **Docker**: 집 Mac(Mac mini, M4)에 Homebrew+Docker Desktop 신규 설치, `docker compose up -d --build` 정상 기동 검증 완료
 - **테스트 DB**: `auction_test_db`는 `docker compose up`만으로는 생성되지 않음 — 최초 1회 `docker compose exec postgres psql -U auction -d auction_db -c "CREATE DATABASE auction_test_db;"` 필요 (README에 안내 추가)
+- **실제 API 키**: `.env`에 `ONBID_API_KEY`/`MOLIT_API_KEY` 실제 서비스키 반영됨(gitignore 처리, 저장소엔 안 올라감), `ENABLE_MOCK_CONNECTORS=true`라 기본은 여전히 Mock 우선 — 실 커넥터를 쓰려면 `false`로 변경
+- **주의**: `check/` 디렉터리에 data.go.kr 활용신청 화면 캡처와 서비스키가 그대로 담긴 스크린샷/문서가 있음 — `.gitignore`에 등록되어 커밋되지 않지만, 다른 사람과 공유 시 주의
 
 ## 완료된 작업
 1. **MVP Phase 1~6** (지시서 `docs/개발지시서-v1.0.md` 기준) — 전부 완료
