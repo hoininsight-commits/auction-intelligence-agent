@@ -4,16 +4,16 @@
 
 ## 마지막 업데이트
 2026-07-10 — 이 Mac(`imtaehun-ui-MacBookPro`)에서 MVP 전체 구현 + 후순위 기능 일부 + Docker 실기동 검증까지 완료한 상태.
-2026-07-11 — 집 Mac(Mac mini, M4)에 Homebrew+Docker Desktop 신규 설치, `/run-checks` 전체 재검증 완료. 이어서 온비드/국토부 실거래가 API 실제 서비스키로 실호출 검증 완료, 온비드 커넥터 전면 재작성 (아래 참고).
+2026-07-11 — 집 Mac(Mac mini, M4)에 Homebrew+Docker Desktop 신규 설치, `/run-checks` 전체 재검증. 온비드/국토부 실거래가 API 실제 서비스키로 실호출 검증 + 온비드 커넥터 전면 재작성. 실제 데이터 수집 파이프라인(`ENABLE_MOCK_CONNECTORS=false`) end-to-end 검증. cron/스케줄러(Celery Beat) 실제 연결 + 국토부 전국 순회 구현까지 완료 — **알려진 이슈 항목이 사실상 전부 해소된 상태** (아래 참고).
 
 ## 지금 상태 (한눈에)
 - **저장소**: https://github.com/hoininsight-commits/auction-intelligence-agent (public)
-- **최신 커밋**: `919fa17` "collect_source_items가 커넥터 kwargs를 받아 전달하도록 확장, 실제 파이프라인 검증"
-- **working tree**: clean (미커밋 변경 없음)
+- **최신 커밋**: (아래 커밋 예정) "cron/스케줄러 실제 연결 + 국토부 실거래가 전국 순회 구현"
+- **working tree**: 커밋 대기 중 (celery_app.py/tasks.py/scheduler.py/docker-compose.yml/real_transaction_connector.py + 문서)
 - **pytest**: 37/37 통과. **ruff check/format**: 둘 다 통과
-- **Docker**: 집 Mac(Mac mini, M4)에 Homebrew+Docker Desktop 신규 설치, `docker compose up -d --build` 정상 기동 검증 완료
+- **Docker**: 집 Mac(Mac mini, M4)에 Homebrew+Docker Desktop 신규 설치, `docker compose up -d --build` 정상 기동 검증 완료. `worker`/`beat` 서비스도 추가되어 함께 기동됨.
 - **테스트 DB**: `auction_test_db`는 `docker compose up`만으로는 생성되지 않음 — 최초 1회 `docker compose exec postgres psql -U auction -d auction_db -c "CREATE DATABASE auction_test_db;"` 필요 (README에 안내 추가)
-- **실제 API 키**: `.env`에 `ONBID_API_KEY`/`MOLIT_API_KEY` 실제 서비스키 반영됨(gitignore 처리, 저장소엔 안 올라감). **`ENABLE_MOCK_CONNECTORS=false`로 변경되어 있음** — 이 Mac의 `.env`는 이제 실제 온비드/국토부 API를 호출한다. 다른 환경에서 Mock을 쓰려면 `.env`에서 다시 `true`로 바꿀 것.
+- **실제 API 키**: `.env`에 `ONBID_API_KEY`/`MOLIT_API_KEY` 실제 서비스키 반영됨(gitignore 처리, 저장소엔 안 올라감). **`ENABLE_MOCK_CONNECTORS=false`로 변경되어 있음** — 이 Mac의 `.env`는 이제 실제 온비드/국토부 API를 호출한다(beat이 매시간/매일 자동 호출도 함). 다른 환경에서 Mock을 쓰려면 `.env`에서 다시 `true`로 바꿀 것.
 - **주의**: `check/` 디렉터리에 data.go.kr 활용신청 화면 캡처와 서비스키가 그대로 담긴 스크린샷/문서가 있음 — `.gitignore`에 등록되어 커밋되지 않지만, 다른 사람과 공유 시 주의
 
 ## 완료된 작업
@@ -48,7 +48,7 @@
    - 재검증: 온비드(100건), 국토부(서울 종로구, 20건→19신규+1갱신) 둘 다 실제 파이프라인으로 성공. 재실행 시 upsert 멱등성도 확인(같은 데이터 재수집 시 `updated_count`로 정상 집계). `/run-checks` 최종 재확인(ruff/format/pytest 37/37) 통과.
 2. ~~국토부 커넥터 법정동코드 매핑이 9개 시군구만 하드코딩됨~~ → 2026-07-11 전국 250개 시/군/구로 확장 완료 (`real_transaction_connector.py`의 `_LAWD_CD_MAP`). 세종시 등 구/군 없는 지역은 sido 단독 매핑으로 처리. **`/run-checks`로 재검증 완료** (아래 참고).
 3. ~~ruff F821 10건 미해결~~ → 2026-07-11 해소: `app/models/{auction_item,auction_result,real_estate_detail,vehicle_detail,price_prediction,risk_assessment}.py` 6개 파일에 `TYPE_CHECKING` 가드 import 추가 (순환 import 없음, 런타임 동작 영향 없음). **`ruff check` 0건 확인 완료** (아래 참고).
-4. **cron/스케줄러 미연결** — `app/workers/celery_app.py`, `app/ingestion/scheduler.py` 구조는 있지만 실제 주기 실행(Celery Beat 등)은 안 붙어있음. 데이터 수집은 수동 트리거만 가능. (2026-07-11: `ScheduledJob.default_kwargs`를 추가해 실제로 트리거되면 동작은 하도록 만들어 뒀지만, 트리거 자체는 여전히 안 붙어있고 국토부는 서울 종로구 한 지역만 기본값임 — 전국 순회는 별도 구현 필요)
+4. ~~cron/스케줄러 미연결~~ → 2026-07-11 연결 완료: `app/workers/celery_app.py`에 `beat_schedule` 추가(온비드 매시간 `collect_source_items_task`, 국토부 실거래가 전국 순회 매일 새벽 3시 KST `collect_real_transaction_all_regions_task`). 국토부 전국 순회는 새 `real_transaction_connector.get_supported_regions()`으로 `_LAWD_CD_MAP` 250개 시/군/구 전체를 반복하며 지역별로 별도 `collect_source_items` 호출 + `collection_jobs` 로그를 남긴다(세종처럼 구/군 없는 지역도 처리). `docker-compose.yml`에 `worker`/`beat` 서비스 추가해 `docker compose up -d`로 함께 기동됨. 태스크 큐잉(`.delay()`)→워커 실행→결과 반환 전체 경로와 3개 지역(종로구/중구/세종) 실호출을 직접 검증. **beat의 실제 매시간/매일 트리거는 몇 시간~하루를 기다려야 확인 가능** — 아직 그 시점까지 관찰하지는 못했으니 다음 세션에서 `docker compose logs beat`로 실제 스케줄 발화 여부 확인 권장.
 5. ~~`ruff format --check` 전체 미통과 (75개 파일)~~ → 2026-07-11 `ruff format .` 일괄 적용으로 해소. 로직 변경 없음, `ruff check`/pytest 37/37 재확인 완료.
 6. **§7.7 수익률 API 지시서 예시 오류** — 지시서의 `safety_margin` 예시값(42,000,000)이 지시서 자신의 공식과 안 맞음(공식대로면 7,750,000). 코드는 공식 기준으로 구현 — 이게 맞는 것으로 최종 결정됨, 재논의 불필요.
 

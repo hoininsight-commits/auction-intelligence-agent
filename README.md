@@ -34,6 +34,13 @@ python -m app.seed.seed_sample_data
 # 관리자 페이지: http://localhost:8000/admin
 ```
 
+`docker compose up -d`는 `app`/`postgres`/`redis`와 함께 데이터 수집을 주기적으로
+실행하는 `worker`(Celery worker)/`beat`(Celery beat 스케줄러) 컨테이너도 함께 띄운다.
+`ENABLE_MOCK_CONNECTORS=false`이고 `ONBID_API_KEY`/`MOLIT_API_KEY`가 설정돼 있으면,
+beat이 온비드는 매시간, 국토부 실거래가는 전국 250개 시/군/구를 순회하며 매일
+새벽 3시(KST)에 자동 수집한다(`app/workers/celery_app.py`의 `beat_schedule` 참고).
+수집 결과는 `collection_jobs` 테이블과 관리자 페이지 데이터품질 요약에서 확인할 수 있다.
+
 ### Docker 없이 로컬에서 실행
 
 Docker가 없는 환경(예: 로컬에 PostgreSQL을 직접 설치한 경우)에서는 아래처럼

@@ -27,5 +27,6 @@
 - [x] Docker Desktop 신규 설치(집 Mac) + `/run-checks` 전체 재검증(ruff check/alembic/pytest 37/37/`/docs`) 완료
 - [x] `ruff format .` 일괄 적용 (75개 파일 스타일 드리프트 해소, 로직 변경 없음, ruff check/pytest 재확인 완료)
 - [x] `ENABLE_MOCK_CONNECTORS=false` 실제 데이터 수집 파이프라인 end-to-end 검증 (2026-07-11) — `collect_source_items`가 `**connector_kwargs`를 받아 커넥터에 전달하도록 확장, `tasks.py`/`scheduler.py`(`ScheduledJob.default_kwargs`)까지 관통. 온비드/국토부(서울 종로구) 둘 다 raw 저장→정규화 upsert→`collection_jobs` 로그까지 성공, 재실행 시 upsert 멱등성(`updated_count`)도 확인. `/run-checks` 재확인 완료
+- [x] cron/스케줄러 실제 연결 (2026-07-11) — `app/workers/celery_app.py`에 `beat_schedule` 추가(온비드 매시간, 국토부 실거래가 전국 순회 매일 새벽 3시), `real_transaction_connector.get_supported_regions()`으로 `_LAWD_CD_MAP` 250개 시/군/구 전체 순회 태스크(`collect_real_transaction_all_regions_task`) 구현. `docker-compose.yml`에 `worker`/`beat` 서비스 추가. 태스크 큐잉→워커 실행→결과 반환 및 지역별(세종 포함) 실제 호출 성공을 직접 검증, `/run-checks` 재확인 완료
 
 각 작업 완료 시 `/run-checks` 실행 후 `progress.md` 갱신 + git commit/push.

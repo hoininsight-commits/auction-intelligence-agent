@@ -325,6 +325,23 @@ _LAWD_CD_MAP: dict[str, str] = {
 }
 
 
+def get_supported_regions() -> list[tuple[str, str]]:
+    """`_LAWD_CD_MAP`에 등록된 전국 시/군/구를 (sido, sigungu) 튜플 목록으로 반환한다.
+
+    전국 순회 수집(예: 매일 전체 지역을 돌며 실거래가를 갱신하는 배치 작업)에서
+    반복 대상 지역 목록을 얻는 용도로 사용한다. 세종특별자치시처럼 구/군 구분이
+    없는 지역은 sigungu가 빈 문자열이다.
+    """
+    regions: list[tuple[str, str]] = []
+    for key in _LAWD_CD_MAP:
+        if " " in key:
+            sido, sigungu = key.split(" ", 1)
+        else:
+            sido, sigungu = key, ""
+        regions.append((sido, sigungu))
+    return regions
+
+
 class RealTransactionConnectorConfigError(RuntimeError):
     """MOLIT_API_KEY 등 필수 설정값이 없거나 필수 파라미터가 누락되었을 때 발생한다."""
 

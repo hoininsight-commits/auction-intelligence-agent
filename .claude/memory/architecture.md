@@ -20,7 +20,8 @@ source raw → `raw_source_records` 저장 → 정규화(`normalization_service`
 - `real_transaction_connector.py`: 실제 국토교통부 아파트매매 실거래가 상세 API(`getRTMSDataSvcAptTradeDev`) 연동, 2026-07-11 실제 서비스키로 호출 검증 완료. `MOLIT_API_KEY` + 법정동코드(LAWD_CD, 전국 250개 시/군/구 매핑) 필요.
 - `court_auction_connector.py`: 인터페이스만, 크롤링 금지 원칙에 따라 `NotImplementedError`.
 - `app/ingestion/pipeline.py`의 `collect_source_items(source, **connector_kwargs)`가 팩토리 선택 → fetch(kwargs 그대로 전달) → raw 저장 → 정규화 upsert → `collection_jobs` 로그를 담당. 커넥터 실패(config error/api error)는 pipeline이 잡아서 `collection_jobs.status="failed"`로 기록 — 앱 크래시 없음. `**connector_kwargs`는 국토부처럼 lawd_cd/sido+sigungu 같은 필수 파라미터가 있는 커넥터를 위한 것 (2026-07-11 추가).
-- `app/ingestion/scheduler.py`의 `ScheduledJob.default_kwargs`가 `collect_all_sources_task` 실행 시 `collect_source_items`에 전달된다. `real_transaction` 항목은 예시로 서울 종로구만 기본값으로 채워둠 — 전국 250개 시/군/구를 순회하는 로직은 아직 없음(후속 작업 후보).
+- `app/ingestion/scheduler.py`의 `ScheduledJob.default_kwargs`가 `collect_all_sources_task`(수동/점검용 1회 실행 task) 실행 시 `collect_source_items`에 전달된다. `real_transaction` 항목은 예시로 서울 종로구만 기본값으로 채워둠.
+- **실제 주기 실행(Celery Beat)이 연결되어 있다** (2026-07-11): `app/workers/celery_app.py`의 `beat_schedule`에 온비드(매시간, `collect_source_items_task`)와 국토부 실거래가 전국 순회(매일 새벽 3시 KST, `collect_real_transaction_all_regions_task`)가 등록됨. 전국 순회는 `real_transaction_connector.get_supported_regions()`(`_LAWD_CD_MAP` 250개 시/군/구)를 순회하며 지역당 별도 `collect_source_items` 호출 + `collection_jobs` 로그를 남긴다. `docker-compose.yml`에 `worker`/`beat` 서비스 추가되어 `docker compose up -d`로 함께 기동됨.
 
 ## 서브에이전트 매핑 (`.claude/agents/`)
 - Price Prediction → `services/price_prediction_service.py` (rule-v1)
