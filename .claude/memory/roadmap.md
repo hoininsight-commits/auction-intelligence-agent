@@ -26,5 +26,6 @@
 - [x] 국토부 커넥터 법정동코드 매핑 전국 확장 (`real_transaction_connector.py`의 `_LAWD_CD_MAP`, 9개 → 250개 시/군/구), `/run-checks`로 재검증 완료 (2026-07-11)
 - [x] Docker Desktop 신규 설치(집 Mac) + `/run-checks` 전체 재검증(ruff check/alembic/pytest 37/37/`/docs`) 완료
 - [x] `ruff format .` 일괄 적용 (75개 파일 스타일 드리프트 해소, 로직 변경 없음, ruff check/pytest 재확인 완료)
+- [x] `ENABLE_MOCK_CONNECTORS=false` 실제 데이터 수집 파이프라인 end-to-end 검증 (2026-07-11) — `collect_source_items`가 `**connector_kwargs`를 받아 커넥터에 전달하도록 확장, `tasks.py`/`scheduler.py`(`ScheduledJob.default_kwargs`)까지 관통. 온비드/국토부(서울 종로구) 둘 다 raw 저장→정규화 upsert→`collection_jobs` 로그까지 성공, 재실행 시 upsert 멱등성(`updated_count`)도 확인. `/run-checks` 재확인 완료
 
 각 작업 완료 시 `/run-checks` 실행 후 `progress.md` 갱신 + git commit/push.

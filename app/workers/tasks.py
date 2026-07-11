@@ -15,9 +15,13 @@ from app.workers.celery_app import celery_app
 
 
 @celery_app.task(name="app.workers.tasks.collect_source_items_task")
-def collect_source_items_task(source: str) -> dict[str, Any]:
-    """단일 source에 대해 `collect_source_items`를 실행하는 Celery task."""
-    return asyncio.run(collect_source_items(source))
+def collect_source_items_task(source: str, **connector_kwargs: Any) -> dict[str, Any]:
+    """단일 source에 대해 `collect_source_items`를 실행하는 Celery task.
+
+    connector_kwargs는 그대로 connector.fetch_items()에 전달된다 (예: 국토부
+    실거래가 커넥터의 lawd_cd/sido+sigungu, deal_ymd).
+    """
+    return asyncio.run(collect_source_items(source, **connector_kwargs))
 
 
 @celery_app.task(name="app.workers.tasks.collect_all_sources_task")
@@ -27,5 +31,7 @@ def collect_all_sources_task() -> list[dict[str, Any]]:
 
     results = []
     for scheduled_job in get_schedule():
-        results.append(asyncio.run(collect_source_items(scheduled_job.source)))
+        results.append(
+            asyncio.run(collect_source_items(scheduled_job.source, **scheduled_job.default_kwargs))
+        )
     return results

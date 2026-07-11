@@ -13,7 +13,7 @@
 - **pytest**: 37/37 통과. **ruff check/format**: 둘 다 통과
 - **Docker**: 집 Mac(Mac mini, M4)에 Homebrew+Docker Desktop 신규 설치, `docker compose up -d --build` 정상 기동 검증 완료
 - **테스트 DB**: `auction_test_db`는 `docker compose up`만으로는 생성되지 않음 — 최초 1회 `docker compose exec postgres psql -U auction -d auction_db -c "CREATE DATABASE auction_test_db;"` 필요 (README에 안내 추가)
-- **실제 API 키**: `.env`에 `ONBID_API_KEY`/`MOLIT_API_KEY` 실제 서비스키 반영됨(gitignore 처리, 저장소엔 안 올라감), `ENABLE_MOCK_CONNECTORS=true`라 기본은 여전히 Mock 우선 — 실 커넥터를 쓰려면 `false`로 변경
+- **실제 API 키**: `.env`에 `ONBID_API_KEY`/`MOLIT_API_KEY` 실제 서비스키 반영됨(gitignore 처리, 저장소엔 안 올라감). **`ENABLE_MOCK_CONNECTORS=false`로 변경되어 있음** — 이 Mac의 `.env`는 이제 실제 온비드/국토부 API를 호출한다. 다른 환경에서 Mock을 쓰려면 `.env`에서 다시 `true`로 바꿀 것.
 - **주의**: `check/` 디렉터리에 data.go.kr 활용신청 화면 캡처와 서비스키가 그대로 담긴 스크린샷/문서가 있음 — `.gitignore`에 등록되어 커밋되지 않지만, 다른 사람과 공유 시 주의
 
 ## 완료된 작업
@@ -43,9 +43,12 @@
      - `source_item_id` 형식이 `{cltrMngNo}::{pbctCdtnNo}`로 변경됨 (cltrMngNo 자체에 하이픈이 있어 `-` 대신 `::` 구분자 사용)
      - 물건상세 오퍼레이션은 소재지/감정가/용도 필드를 내려주지 않음 — 목록 조회 결과와 병합 필요(현재는 목록 필드만으로 정규화, 상세는 입찰 조건 위주)
    - 실제 호출로 국토부/온비드 둘 다 정상 응답 확인. `.env.example`/`.env`에 실제 서비스키 반영, `/run-checks` 재검증 완료 (ruff/format/pytest 37/37 통과)
+   - 이어서 `ENABLE_MOCK_CONNECTORS=false`로 바꾸고 **실제 파이프라인**(`collect_source_items` → raw 저장 → 정규화 upsert → `collection_jobs` 로그)까지 end-to-end 검증. 온비드는 파라미터 없이도 성공(100건 수집/삽입)했지만, 국토부는 `LAWD_CD`가 필수라 `collect_source_items(source)`가 파라미터 없이 호출하는 기존 구조에서는 실패했음(앱 크래시 없이 `collection_jobs.status="failed"`로 안전하게 기록되긴 함).
+   - 이 문제를 해결하기 위해 `collect_source_items(source, **connector_kwargs)`로 확장해 `connector.fetch_items(**connector_kwargs)`에 그대로 전달하도록 변경. `app/workers/tasks.py`의 Celery task와 `app/ingestion/scheduler.py`의 `ScheduledJob`에도 `default_kwargs` 필드를 추가해 관통시킴. `ScheduledJob`의 `real_transaction` 항목은 예시로 서울 종로구를 기본값으로 채워둠(전국 250개 시/군/구를 순회하는 로직은 아직 없음 — 필요하면 후속 작업으로 `_LAWD_CD_MAP` 전체를 반복하는 로직 추가).
+   - 재검증: 온비드(100건), 국토부(서울 종로구, 20건→19신규+1갱신) 둘 다 실제 파이프라인으로 성공. 재실행 시 upsert 멱등성도 확인(같은 데이터 재수집 시 `updated_count`로 정상 집계). `/run-checks` 최종 재확인(ruff/format/pytest 37/37) 통과.
 2. ~~국토부 커넥터 법정동코드 매핑이 9개 시군구만 하드코딩됨~~ → 2026-07-11 전국 250개 시/군/구로 확장 완료 (`real_transaction_connector.py`의 `_LAWD_CD_MAP`). 세종시 등 구/군 없는 지역은 sido 단독 매핑으로 처리. **`/run-checks`로 재검증 완료** (아래 참고).
 3. ~~ruff F821 10건 미해결~~ → 2026-07-11 해소: `app/models/{auction_item,auction_result,real_estate_detail,vehicle_detail,price_prediction,risk_assessment}.py` 6개 파일에 `TYPE_CHECKING` 가드 import 추가 (순환 import 없음, 런타임 동작 영향 없음). **`ruff check` 0건 확인 완료** (아래 참고).
-4. **cron/스케줄러 미연결** — `app/workers/celery_app.py`, `app/ingestion/scheduler.py` 구조는 있지만 실제 주기 실행(Celery Beat 등)은 안 붙어있음. 데이터 수집은 수동 트리거만 가능.
+4. **cron/스케줄러 미연결** — `app/workers/celery_app.py`, `app/ingestion/scheduler.py` 구조는 있지만 실제 주기 실행(Celery Beat 등)은 안 붙어있음. 데이터 수집은 수동 트리거만 가능. (2026-07-11: `ScheduledJob.default_kwargs`를 추가해 실제로 트리거되면 동작은 하도록 만들어 뒀지만, 트리거 자체는 여전히 안 붙어있고 국토부는 서울 종로구 한 지역만 기본값임 — 전국 순회는 별도 구현 필요)
 5. ~~`ruff format --check` 전체 미통과 (75개 파일)~~ → 2026-07-11 `ruff format .` 일괄 적용으로 해소. 로직 변경 없음, `ruff check`/pytest 37/37 재확인 완료.
 6. **§7.7 수익률 API 지시서 예시 오류** — 지시서의 `safety_margin` 예시값(42,000,000)이 지시서 자신의 공식과 안 맞음(공식대로면 7,750,000). 코드는 공식 기준으로 구현 — 이게 맞는 것으로 최종 결정됨, 재논의 불필요.
 

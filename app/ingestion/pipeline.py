@@ -1,8 +1,8 @@
 """raw 저장 -> 정규화 -> upsert 파이프라인 (지시서 §9.5).
 
-`collect_source_items(source)`가 핵심 진입점이다:
+`collect_source_items(source, **connector_kwargs)`가 핵심 진입점이다:
     1. connector 선택 (ENABLE_MOCK_CONNECTORS에 따라 mock/real 결정)
-    2. fetch_items 실행
+    2. fetch_items 실행 (connector_kwargs를 그대로 전달)
     3. raw_source_records 저장
     4. auction_items(경매/공매) 또는 property_transactions(실거래가) 정규화 및 upsert
     5. collection_jobs 로그 저장
@@ -72,11 +72,12 @@ def _is_property_transaction_item(item: dict[str, Any]) -> bool:
     return "deal_price" in item and "appraisal_price" not in item
 
 
-async def collect_source_items(source: str) -> dict[str, Any]:
+async def collect_source_items(source: str, **connector_kwargs: Any) -> dict[str, Any]:
     """단일 source에 대한 전체 수집 파이프라인을 실행한다.
 
     1. connector 선택
-    2. fetch_items 실행
+    2. fetch_items 실행 (connector_kwargs를 그대로 전달 — 예: 국토부 실거래가
+       커넥터는 lawd_cd/sido+sigungu, deal_ymd 등 필수 파라미터가 필요하다)
     3. raw_source_records 저장
     4. auction_items 정규화 및 upsert (property_transactions 소스는 해당 테이블에 upsert)
     5. collection_jobs 로그 저장
@@ -102,7 +103,7 @@ async def collect_source_items(source: str) -> dict[str, Any]:
 
         try:
             connector = get_connector(source)
-            items = await connector.fetch_items()
+            items = await connector.fetch_items(**connector_kwargs)
             fetched_count = len(items)
 
             raw_repo = RawSourceRepository(session)
