@@ -8,7 +8,7 @@
 
 ## 지금 상태 (한눈에)
 - **저장소**: https://github.com/hoininsight-commits/auction-intelligence-agent (public)
-- **최신 커밋**: `ff37d20` "온비드/국토부 실거래가 API 실호출 검증, 온비드 커넥터 전면 재작성"
+- **최신 커밋**: `919fa17` "collect_source_items가 커넥터 kwargs를 받아 전달하도록 확장, 실제 파이프라인 검증"
 - **working tree**: clean (미커밋 변경 없음)
 - **pytest**: 37/37 통과. **ruff check/format**: 둘 다 통과
 - **Docker**: 집 Mac(Mac mini, M4)에 Homebrew+Docker Desktop 신규 설치, `docker compose up -d --build` 정상 기동 검증 완료
