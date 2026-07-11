@@ -45,6 +45,9 @@ async def get_auction_item_detail(
         session, item.sido, item.sigungu
     )
 
+    view_count = await auction_item_repository.increment_view_count(session, auction_item_id)
+    await session.commit()
+
     latest_prediction = (
         LatestPredictionRead(
             predicted_price_low=prediction.predicted_price_low,
@@ -89,6 +92,8 @@ async def get_auction_item_detail(
         deposit_price=item.deposit_price,
         fail_count=item.fail_count,
         bid_date=item.bid_date,
+        view_count=view_count if view_count is not None else item.view_count,
+        watch_count=item.watch_count,
         real_estate_detail=RealEstateDetailRead.model_validate(item.real_estate_detail)
         if item.real_estate_detail
         else None,

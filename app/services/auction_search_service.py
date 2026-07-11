@@ -103,6 +103,8 @@ async def search_auction_items(
             else None,
             risk_level=risk.risk_level if risk else None,
             status=item.status,
+            view_count=item.view_count,
+            watch_count=item.watch_count,
         )
         for item, prediction, risk in rows
     ]

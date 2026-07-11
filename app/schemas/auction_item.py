@@ -105,6 +105,8 @@ class AuctionItemSearchItem(BaseModel):
     predicted_rate_mid: float | None = None
     risk_level: str | None = None
     status: str | None = None
+    view_count: int = 0
+    watch_count: int = 0
 
 
 class AuctionItemSearchPagination(BaseModel):
@@ -196,6 +198,8 @@ class AuctionItemDetailResponse(BaseModel):
     deposit_price: int | None = None
     fail_count: int
     bid_date: datetime | None = None
+    view_count: int = 0
+    watch_count: int = 0
     real_estate_detail: RealEstateDetailRead | None = None
     vehicle_detail: VehicleDetailRead | None = None
     latest_prediction: LatestPredictionRead | None = None

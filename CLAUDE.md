@@ -38,6 +38,7 @@ alembic revision --autogenerate -m "message"
 - 개발 순서 및 후순위 기능 진행상태: `.claude/memory/roadmap.md`
 - 완료 기준: `.claude/memory/definition-of-done.md`
 - 진행 로그: `.claude/memory/progress.md`
+- 프론트엔드 디자인 핸드오프(물건 카드/상세 화면 필드 스펙): `docs/frontend-handoff-물건카드.md`
 
 ## 커맨드 / 서브에이전트
 - `.claude/commands/`: `/run-checks`, `/new-connector`, `/add-endpoint`, `/db-migrate`, `/mask-check`

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import Select, and_, func, select
+from sqlalchemy import Select, and_, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -178,6 +178,31 @@ async def get_latest_risk_assessment(
         .limit(1)
     )
     return (await session.execute(stmt)).scalar_one_or_none()
+
+
+async def increment_view_count(session: AsyncSession, auction_item_id: int) -> int | None:
+    """상세 조회 시 view_count를 원자적으로 1 증가시키고 갱신된 값을 반환한다."""
+    stmt = (
+        update(AuctionItem)
+        .where(AuctionItem.id == auction_item_id)
+        .values(view_count=AuctionItem.view_count + 1)
+        .returning(AuctionItem.view_count)
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def adjust_watch_count(session: AsyncSession, auction_item_id: int, delta: int) -> int | None:
+    """관심 물건 추가/삭제 시 watch_count를 원자적으로 증감시킨다. 0 미만으로는 내려가지 않는다."""
+    new_value = func.greatest(AuctionItem.watch_count + delta, 0)
+    stmt = (
+        update(AuctionItem)
+        .where(AuctionItem.id == auction_item_id)
+        .values(watch_count=new_value)
+        .returning(AuctionItem.watch_count)
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
 
 
 async def get_nearby_transactions(

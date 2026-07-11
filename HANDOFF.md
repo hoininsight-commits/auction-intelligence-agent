@@ -5,6 +5,7 @@
 ## 마지막 업데이트
 2026-07-10 — 이 Mac(`imtaehun-ui-MacBookPro`)에서 MVP 전체 구현 + 후순위 기능 일부 + Docker 실기동 검증까지 완료한 상태.
 2026-07-11 — 집 Mac(Mac mini, M4)에 Homebrew+Docker Desktop 신규 설치, `/run-checks` 전체 재검증. 온비드/국토부 실거래가 API 실제 서비스키로 실호출 검증 + 온비드 커넥터 전면 재작성. 실제 데이터 수집 파이프라인(`ENABLE_MOCK_CONNECTORS=false`) end-to-end 검증. cron/스케줄러(Celery Beat) 실제 연결 + 국토부 전국 순회 구현까지 완료 — **알려진 이슈 항목이 사실상 전부 해소된 상태** (아래 참고).
+2026-07-11 (같은 날 이어서) — 경쟁사(국내 유료 3강/AI 신흥/해외 압류경매) 리서치 후 프론트엔드 핸드오프 문서(`docs/frontend-handoff-물건카드.md`) 작성, `view_count`/`watch_count` 실제 증가 로직 구현 및 `/run-checks` + 실서버 curl 검증 완료.
 
 ## 지금 상태 (한눈에)
 - **저장소**: https://github.com/hoininsight-commits/auction-intelligence-agent (public)

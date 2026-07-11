@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import UserWatchlist
-from app.repositories import watchlist_repository
+from app.repositories import auction_item_repository, watchlist_repository
 
 
 class WatchlistAlreadyExistsError(Exception):
@@ -24,6 +24,7 @@ async def add_to_watchlist(
         entry = await watchlist_repository.create_watchlist_entry(
             session, user_id, auction_item_id, memo
         )
+        await auction_item_repository.adjust_watch_count(session, auction_item_id, 1)
         await session.commit()
         return entry
     except IntegrityError:
@@ -37,5 +38,7 @@ async def list_watchlist(session: AsyncSession, user_id: int) -> list[UserWatchl
 
 async def remove_from_watchlist(session: AsyncSession, user_id: int, auction_item_id: int) -> bool:
     deleted = await watchlist_repository.delete_watchlist_entry(session, user_id, auction_item_id)
+    if deleted:
+        await auction_item_repository.adjust_watch_count(session, auction_item_id, -1)
     await session.commit()
     return deleted
