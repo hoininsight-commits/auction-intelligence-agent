@@ -17,7 +17,8 @@ source raw → `raw_source_records` 저장 → 정규화(`normalization_service`
 ## Connector 상태
 - `mock_onbid_connector.py` / `mock_real_transaction_connector.py`: 항상 사용 가능, `ENABLE_MOCK_CONNECTORS=true`(기본)일 때 우선.
 - `onbid_connector.py`: 실제 공공데이터포털 "차세대 온비드" 물건목록(`getRlstCltrList2`)/물건상세(`getCltrBidInf2`) API 연동, 2026-07-11 실제 서비스키로 호출 검증 완료. `ONBID_API_KEY` 필요.
-- `real_transaction_connector.py`: 실제 국토교통부 아파트매매 실거래가 상세 API(`getRTMSDataSvcAptTradeDev`) 연동, 2026-07-11 실제 서비스키로 호출 검증 완료. `MOLIT_API_KEY` + 법정동코드(LAWD_CD, 전국 250개 시/군/구 매핑) 필요.
+- `real_transaction_connector.py`: 국토교통부 매물종별 실거래가 API 5종(아파트/오피스텔/연립다세대/단독다가구/상업업무용) 연동, `property_type` kwarg로 선택(`PROPERTY_TYPE_CONFIG`). 아파트만 2026-07-11 실제 서비스키로 호출 검증 완료 — 나머지 4종은 data.go.kr 활용신청 미승인으로 403(코드는 완성, 승인 대기). `MOLIT_API_KEY` + 법정동코드(LAWD_CD, 전국 250개 시/군/구 매핑) 필요.
+- `onbid_connector.py`의 `fetch_items`는 페이지네이션 지원(`max_pages` 기본 20, numOfRows*max_pages까지 순회, 짧은/빈 페이지에서 자동 중단). 회전 커서는 없어 매 호출이 항상 1페이지부터 시작(ponytail 한계 주석 참고).
 - `court_auction_connector.py`: 인터페이스만, 크롤링 금지 원칙에 따라 `NotImplementedError`.
 - `app/ingestion/pipeline.py`의 `collect_source_items(source, **connector_kwargs)`가 팩토리 선택 → fetch(kwargs 그대로 전달) → raw 저장 → 정규화 upsert → `collection_jobs` 로그를 담당. 커넥터 실패(config error/api error)는 pipeline이 잡아서 `collection_jobs.status="failed"`로 기록 — 앱 크래시 없음. `**connector_kwargs`는 국토부처럼 lawd_cd/sido+sigungu 같은 필수 파라미터가 있는 커넥터를 위한 것 (2026-07-11 추가).
 - `app/ingestion/scheduler.py`의 `ScheduledJob.default_kwargs`가 `collect_all_sources_task`(수동/점검용 1회 실행 task) 실행 시 `collect_source_items`에 전달된다. `real_transaction` 항목은 예시로 서울 종로구만 기본값으로 채워둠.

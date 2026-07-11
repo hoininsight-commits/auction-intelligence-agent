@@ -49,6 +49,15 @@ DEFAULT_PRPT_DIV_CD = "0002,0003,0004,0005,0006,0007,0008,0010,0011,0013"
 # pvctTrgtYn(수의계약가능여부) 필수 파라미터. 기본값은 일반(비수의계약) 물건.
 DEFAULT_PVCT_TRGT_YN = "N"
 
+# 물건목록 조회서비스는 한 번에 최대 numOfRows(기본 100)건만 내려준다. 전체
+# 재산유형 기준 물건 수가 6만건대라(2026-07-11 실호출 기준 totalCount=64,440)
+# fetch_items 1회 호출로 여러 페이지를 이어서 모아 커버리지를 넓힌다.
+# ponytail: 매 호출이 항상 pageNo=1부터 시작해 매번 같은 구간(최대
+# max_pages*numOfRows건)만 반복 조회한다 — 전체 카탈로그를 여러 번의 호출에
+# 걸쳐 순회하는 회전 커서는 없다. 업그레이드하려면 마지막으로 조회한 페이지
+# 번호를 Redis 등에 저장해 다음 호출이 이어서 시작하도록 만들면 된다.
+DEFAULT_MAX_PAGES = 20
+
 # cltrUsgLclsCtgrNm/cltrUsgMclsCtgrNm/cltrUsgSclsCtgrNm(용도 대/중/소분류명) 원문에
 # 포함된 키워드 -> 내부 category 값 매핑.
 # (mock_onbid_connector.py가 사용하는 category 값과 동일한 어휘를 사용한다.)
@@ -117,20 +126,35 @@ class OnbidConnector(BaseConnector):
         kwargs로 prptDivCd/pvctTrgtYn/bidDivCd/dspsMthodCd/lctnSdnm/lctnSggnm/lctnEmdNm
         등 물건목록 조회서비스가 지원하는 검색 조건을 그대로 전달할 수 있다.
         prptDivCd, pvctTrgtYn은 필수 파라미터라 지정하지 않으면 기본값을 사용한다.
+
+        numOfRows(기본 100)건씩 pageNo(기본 1부터)를 max_pages(기본
+        DEFAULT_MAX_PAGES)회까지 순회하며 모은다. 응답 건수가 numOfRows보다
+        적은 페이지를 만나면 더 뒤 페이지가 없다는 뜻이므로 그 지점에서 멈춘다.
         """
         kwargs = dict(kwargs)
-        params: dict[str, Any] = {
-            "numOfRows": kwargs.pop("numOfRows", 100),
-            "pageNo": kwargs.pop("pageNo", 1),
+        num_of_rows = kwargs.pop("numOfRows", 100)
+        start_page = kwargs.pop("pageNo", 1)
+        max_pages = kwargs.pop("max_pages", DEFAULT_MAX_PAGES)
+        base_params: dict[str, Any] = {
+            "numOfRows": num_of_rows,
             "resultType": "xml",
             "prptDivCd": kwargs.pop("prptDivCd", DEFAULT_PRPT_DIV_CD),
             "pvctTrgtYn": kwargs.pop("pvctTrgtYn", DEFAULT_PVCT_TRGT_YN),
         }
-        params.update(kwargs)
+        base_params.update(kwargs)
 
-        xml_text = await self._request(ONBID_LIST_BASE_URL, ONBID_LIST_OPERATION, params)
-        raw_items = self._parse_list_response(xml_text)
-        return [self._normalize_list_item(raw) for raw in raw_items]
+        all_raw_items: list[dict[str, str]] = []
+        for offset in range(max_pages):
+            params = {**base_params, "pageNo": start_page + offset}
+            xml_text = await self._request(ONBID_LIST_BASE_URL, ONBID_LIST_OPERATION, params)
+            raw_items = self._parse_list_response(xml_text)
+            if not raw_items:
+                break
+            all_raw_items.extend(raw_items)
+            if len(raw_items) < num_of_rows:
+                break
+
+        return [self._normalize_list_item(raw) for raw in all_raw_items]
 
     async def fetch_detail(self, source_item_id: str) -> dict[str, Any]:
         """단일 물건의 입찰 상세 정보를 조회한다.

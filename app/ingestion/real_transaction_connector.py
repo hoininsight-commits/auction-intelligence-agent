@@ -1,35 +1,31 @@
 """국토교통부 실거래가 실제 Connector.
 
-공공데이터포털(data.go.kr)에서 제공하는
-"국토교통부_아파트 매매 실거래가 상세 자료" Open API를 사용해
-아파트 매매 실거래 내역을 조회하고, 지시서 §9.4 정규화 형태(dict)로 변환한다.
+공공데이터포털(data.go.kr)에서 제공하는 국토교통부 매물종별 실거래가 Open API
+5종(아파트/오피스텔/연립다세대/단독·다가구/상업업무용 각각 매매)을 사용해 실거래
+내역을 조회하고, 지시서 §9.4 정규화 형태(dict)로 변환한다.
 
 - 제공기관: 국토교통부 — 공공데이터포털(data.go.kr) 경유로 제공
-- 신청/문서 페이지: https://www.data.go.kr/data/15126468/openapi.do
-  ("국토교통부_아파트 매매 실거래가 상세 자료")
-- 서비스 Base URL: https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev
-- 오퍼레이션: getRTMSDataSvcAptTradeDev
 - 인증 방식: data.go.kr에서 "일반 인증키(Decoding)"를 발급받아 `serviceKey` 쿼리
-  파라미터로 전달 (개발/운영 계정 모두 자동승인, 개발계정 트래픽 10,000회/일)
-- 필수 요청 파라미터: LAWD_CD(법정동시군구코드 5자리), DEAL_YMD(계약년월 YYYYMM 6자리)
-  (선택: pageNo, numOfRows)
+  파라미터로 전달. 매물종별로 서비스가 분리되어 있어, 아파트 API 승인만 받은
+  키로 다른 매물종별 API를 호출하면 SERVICE_ACCESS_DENIED류 오류가 날 수 있다
+  — data.go.kr 마이페이지에서 각 데이터셋을 별도로 활용신청(자동승인)해야 한다.
 - 응답 형식: XML (공공데이터포털 표준 openapi 스키마 - response/header/body/items/item)
 
-주요 응답 필드(아파트 매매 실거래가 상세 자료, 공개된 API 가이드 기준):
-    aptNm(단지명), umdNm(법정동/읍면동명), jibun(지번), roadNm(도로명),
-    excluUseAr(전용면적, m^2), dealAmount(거래금액, "만원" 단위 문자열 - 쉼표 포함),
-    dealYear/dealMonth/dealDay(계약년/월/일), floor(층), buildYear(건축년도),
-    sggCd(시군구코드)
+지원하는 매물종별(PROPERTY_TYPE_CONFIG, property_type kwarg로 선택):
+    apartment(아파트, 기본값) - 신청 페이지 data.go.kr/data/15126468
+    officetel(오피스텔) - data.go.kr/data/15126464
+    row_house(연립다세대) - data.go.kr/data/15126467
+    detached_house(단독·다가구) - data.go.kr/data/15126465
+    commercial(상업업무용) - data.go.kr/data/15126463
 
-2026-07-11 실제 서비스키로 호출해 정상 응답(XML, resultCode 000/OK)을 확인했다.
+필수 요청 파라미터는 공통으로 LAWD_CD(법정동시군구코드 5자리), DEAL_YMD(계약년월
+YYYYMM 6자리)이며, 매물종별로 응답 필드명(단지명/전용면적/층 유무 등)이 달라
+PROPERTY_TYPE_CONFIG의 name_field/area_field/floor_field로 매핑해 정규화한다.
 
-아파트 외 매물종별(연립다세대/오피스텔/단독다가구 등)은 국토교통부가 각각 별도의
-Open API 서비스로 제공한다(예: 연립다세대 매매 실거래가 자료, 오피스텔 매매
-실거래가 자료). 이번 구현은 지시서 범위에 맞춰 아파트 매매 API만 다루며, 정규화
-결과의 `property_type` 필드가 "apartment"로 고정된다. 추후 다른 매물종별 API를
-추가할 때는 별도 Connector(또는 이 Connector의 오퍼레이션/파싱 로직 확장)로 대응하고
-`property_type` 값만 바꿔 동일한 정규화 스키마(property_transactions 테이블)에
-적재하면 된다.
+2026-07-11 실제 서비스키로 아파트 API를 호출해 정상 응답(XML, resultCode 000/OK)을
+확인했다. 나머지 4개 매물종별은 응답 스키마만 공개 문서/레퍼런스 구현
+(WooilJeong/PublicDataReader) 기준으로 반영했고, 실제 서비스키로는 아직 호출
+검증하지 않았다 — 실사용 전 data.go.kr에서 활용신청 승인 여부 확인 필요.
 """
 
 from __future__ import annotations
@@ -46,8 +42,50 @@ from app.ingestion.base import BaseConnector
 
 logger = get_logger(__name__)
 
-MOLIT_BASE_URL = "https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev"
-MOLIT_OPERATION = "getRTMSDataSvcAptTradeDev"
+MOLIT_API_BASE = "https://apis.data.go.kr/1613000"
+
+# 매물종별 -> (서비스 경로, 오퍼레이션명, 단지/건물명 필드, 면적 필드, 층 필드).
+# 층/명칭 필드가 없는 매물종(단독·다가구, 상업업무용 일부)은 None으로 둔다.
+# 출처: WooilJeong/PublicDataReader(PublicDataPortal/molit.py)의 컬럼 목록 +
+# data.go.kr 데이터셋 페이지(아래 각 항목 참고).
+PROPERTY_TYPE_CONFIG: dict[str, dict[str, str | None]] = {
+    "apartment": {
+        "service": "RTMSDataSvcAptTradeDev",
+        "operation": "getRTMSDataSvcAptTradeDev",
+        "name_field": "aptNm",
+        "area_field": "excluUseAr",
+        "floor_field": "floor",
+    },
+    "officetel": {
+        "service": "RTMSDataSvcOffiTrade",
+        "operation": "getRTMSDataSvcOffiTrade",
+        "name_field": "offiNm",
+        "area_field": "excluUseAr",
+        "floor_field": "floor",
+    },
+    "row_house": {
+        "service": "RTMSDataSvcRHTrade",
+        "operation": "getRTMSDataSvcRHTrade",
+        "name_field": "mhouseNm",
+        "area_field": "excluUseAr",
+        "floor_field": "floor",
+    },
+    "detached_house": {
+        "service": "RTMSDataSvcSHTrade",
+        "operation": "getRTMSDataSvcSHTrade",
+        "name_field": None,
+        "area_field": "totalFloorAr",
+        "floor_field": None,
+    },
+    "commercial": {
+        "service": "RTMSDataSvcNrgTrade",
+        "operation": "getRTMSDataSvcNrgTrade",
+        "name_field": None,
+        "area_field": "buildingAr",
+        "floor_field": "floor",
+    },
+}
+DEFAULT_PROPERTY_TYPE = "apartment"
 
 # 시군구명 -> 법정동시군구코드(LAWD_CD, 5자리) 매핑 테이블. 전국 시/군/구 단위로
 # 확장되어 있다(출처: 행정표준코드관리시스템 www.code.go.kr 법정동코드 앞 5자리,
@@ -351,7 +389,7 @@ class RealTransactionConnectorAPIError(RuntimeError):
 
 
 class RealTransactionConnector(BaseConnector):
-    """국토부 아파트 매매 실거래가 공개 API(공공데이터포털) 연동 Connector."""
+    """국토부 매물종별 실거래가 공개 API(공공데이터포털) 연동 Connector."""
 
     source = "molit"
 
@@ -366,8 +404,8 @@ class RealTransactionConnector(BaseConnector):
 
     # -- HTTP 호출 ---------------------------------------------------------
 
-    async def _request(self, operation: str, params: dict[str, Any]) -> str:
-        url = f"{MOLIT_BASE_URL}/{operation}"
+    async def _request(self, service: str, operation: str, params: dict[str, Any]) -> str:
+        url = f"{MOLIT_API_BASE}/{service}/{operation}"
         query: dict[str, Any] = {"serviceKey": self.api_key, **params}
         try:
             async with httpx.AsyncClient(timeout=15.0) as client:
@@ -378,6 +416,17 @@ class RealTransactionConnector(BaseConnector):
             raise RealTransactionConnectorAPIError(
                 f"국토부 실거래가 API 호출에 실패했습니다 ({operation}): {exc}"
             ) from exc
+
+    @staticmethod
+    def _resolve_property_type_config(kwargs: dict[str, Any]) -> tuple[str, dict[str, str | None]]:
+        property_type = kwargs.pop("property_type", DEFAULT_PROPERTY_TYPE)
+        config = PROPERTY_TYPE_CONFIG.get(property_type)
+        if config is None:
+            allowed = ", ".join(PROPERTY_TYPE_CONFIG)
+            raise RealTransactionConnectorConfigError(
+                f"알 수 없는 property_type={property_type!r}입니다. 지원 값: {allowed}"
+            )
+        return property_type, config
 
     # -- 파라미터 해석 --------------------------------------------------------
 
@@ -441,15 +490,17 @@ class RealTransactionConnector(BaseConnector):
     # -- BaseConnector 구현 --------------------------------------------------
 
     async def fetch_items(self, **kwargs) -> list[dict[str, Any]]:
-        """아파트 매매 실거래 내역을 조회해 정규화된 dict 목록으로 반환한다.
+        """매물종별 실거래 내역을 조회해 정규화된 dict 목록으로 반환한다.
 
         kwargs:
+            property_type: PROPERTY_TYPE_CONFIG의 키(기본 "apartment").
             lawd_cd (또는 LAWD_CD): 법정동시군구코드(5자리). 직접 지정 가능.
             sido, sigungu: lawd_cd 미지정 시 내부 매핑 테이블로 LAWD_CD를 조회하는 데 사용.
             deal_ymd (또는 DEAL_YMD): 계약년월(YYYYMM, 6자리). 미지정 시 이번 달.
             numOfRows, pageNo: 페이지네이션 (기본 numOfRows=100, pageNo=1).
         """
         kwargs = dict(kwargs)
+        property_type, config = self._resolve_property_type_config(kwargs)
         lawd_cd, sido, sigungu = self._resolve_lawd_cd(kwargs)
         deal_ymd = self._resolve_deal_ymd(kwargs)
 
@@ -461,9 +512,12 @@ class RealTransactionConnector(BaseConnector):
         }
         params.update(kwargs)
 
-        xml_text = await self._request(MOLIT_OPERATION, params)
+        xml_text = await self._request(config["service"], config["operation"], params)
         raw_items = self._parse_list_response(xml_text)
-        return [self._normalize_item(raw, sido=sido, sigungu=sigungu) for raw in raw_items]
+        return [
+            self._normalize_item(raw, property_type, config, sido=sido, sigungu=sigungu)
+            for raw in raw_items
+        ]
 
     async def fetch_detail(self, source_item_id: str) -> dict[str, Any]:
         """실거래가 데이터는 공식적으로 개별 상세 조회 개념이 없다.
@@ -471,6 +525,9 @@ class RealTransactionConnector(BaseConnector):
         source_item_id는 `fetch_items`가 내부적으로 생성한 식별자
         (LAWD_CD-DEAL_YMD-index)를 기대하지만, 이 API는 건별 단건 조회를
         지원하지 않으므로 동일 조건으로 목록을 재조회해 인덱스로 찾아낸다.
+        property_type 정보는 식별자에 담겨있지 않으므로 기본값(apartment)만
+        지원한다 — 이 메서드는 현재 앱 어디서도 호출되지 않는다(BaseConnector
+        인터페이스를 만족시키기 위한 구현).
         """
         try:
             lawd_cd, deal_ymd, idx_str = source_item_id.split("-")
@@ -526,20 +583,34 @@ class RealTransactionConnector(BaseConnector):
 
     @classmethod
     def _normalize_item(
-        cls, raw: dict[str, str], *, sido: str = "", sigungu: str = ""
+        cls,
+        raw: dict[str, str],
+        property_type: str,
+        config: dict[str, str | None],
+        *,
+        sido: str = "",
+        sigungu: str = "",
     ) -> dict[str, Any]:
         """국토부 원본 필드를 지시서 §9.4 정규화 dict 형태로 변환한다.
 
-        참고한 원본 필드(아파트 매매 실거래가 상세 자료 API 가이드 기준):
-            aptNm(단지명), umdNm(법정동/읍면동명), jibun(지번), roadNm(도로명),
-            sggCd(시군구코드), excluUseAr(전용면적, m^2),
-            dealAmount(거래금액, "만원" 단위 문자열 - 쉼표 포함), dealYear/dealMonth/dealDay,
-            floor(층), buildYear(건축년도)
+        매물종별로 단지/건물명(name_field), 면적(area_field), 층(floor_field)
+        필드명이 달라 PROPERTY_TYPE_CONFIG의 매핑을 그대로 조회한다. 공통 필드는
+        umdNm(법정동/읍면동명), jibun(지번), roadNm(도로명, 아파트만 제공),
+        dealAmount(거래금액, "만원" 단위 문자열 - 쉼표 포함),
+        dealYear/dealMonth/dealDay, buildYear(건축년도).
         """
         umd_nm = raw.get("umdNm", "")
         jibun = raw.get("jibun", "")
         road_nm = raw.get("roadNm", "")
-        apt_nm = raw.get("aptNm", "")
+
+        name_field = config.get("name_field")
+        complex_name = raw.get(name_field, "") if name_field else ""
+
+        area_field = config.get("area_field")
+        exclusive_area = cls._to_float(raw.get(area_field)) if area_field else None
+
+        floor_field = config.get("floor_field")
+        floor_info = raw.get(floor_field, "") if floor_field else ""
 
         address_parts = [part for part in (umd_nm, jibun) if part]
         address = road_nm or " ".join(address_parts)
@@ -547,18 +618,18 @@ class RealTransactionConnector(BaseConnector):
         deal_price = cls._parse_deal_amount(raw.get("dealAmount"))
 
         return {
-            "property_type": "apartment",
+            "property_type": property_type,
             "address": address,
             "sido": sido,
             "sigungu": sigungu,
             "eupmyeondong": umd_nm,
-            "complex_name": apt_nm,
-            "exclusive_area": cls._to_float(raw.get("excluUseAr")),
+            "complex_name": complex_name,
+            "exclusive_area": exclusive_area,
             "deal_price": deal_price,
             "deal_year": cls._to_int(raw.get("dealYear")),
             "deal_month": cls._to_int(raw.get("dealMonth")),
             "deal_day": cls._to_int(raw.get("dealDay")),
-            "floor_info": raw.get("floor", ""),
+            "floor_info": floor_info,
             "build_year": cls._to_int(raw.get("buildYear")),
             "source": "molit",
         }

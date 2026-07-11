@@ -6,16 +6,18 @@
 2026-07-10 — 이 Mac(`imtaehun-ui-MacBookPro`)에서 MVP 전체 구현 + 후순위 기능 일부 + Docker 실기동 검증까지 완료한 상태.
 2026-07-11 — 집 Mac(Mac mini, M4)에 Homebrew+Docker Desktop 신규 설치, `/run-checks` 전체 재검증. 온비드/국토부 실거래가 API 실제 서비스키로 실호출 검증 + 온비드 커넥터 전면 재작성. 실제 데이터 수집 파이프라인(`ENABLE_MOCK_CONNECTORS=false`) end-to-end 검증. cron/스케줄러(Celery Beat) 실제 연결 + 국토부 전국 순회 구현까지 완료 — **알려진 이슈 항목이 사실상 전부 해소된 상태** (아래 참고).
 2026-07-11 (같은 날 이어서) — 경쟁사(국내 유료 3강/AI 신흥/해외 압류경매) 리서치 후 프론트엔드 핸드오프 문서(`docs/frontend-handoff-물건카드.md`) 작성, `view_count`/`watch_count` 실제 증가 로직 구현 및 `/run-checks` + 실서버 curl 검증 완료.
+2026-07-11 (계속) — 종합판정 배지(verdict) 구현. 이어서 온비드 페이지네이션 버그 발견/수정(매시간 같은 100건만 수집하던 문제 → 최대 2,000건/호출로 확장, 실 파이프라인으로 100건→2,002건 증가 검증). 국토부 실거래가 매물종별 4종(오피스텔/연립다세대/단독다가구/상업업무용) 확장 구현 — **단, 4종 모두 실제 서비스키로 403 Forbidden 확인, data.go.kr 활용신청 승인 필요**(아래 참고). 법원경매 크롤링 요청은 절대 규칙 근거로 거절.
 
 ## 지금 상태 (한눈에)
 - **저장소**: https://github.com/hoininsight-commits/auction-intelligence-agent (public)
 - **최신 커밋**: `8baaf71` "관리자 페이지에 종합판정 배지 및 조회수/찜수 표시 추가"
 - **working tree**: clean (미커밋 변경 없음)
-- **pytest**: 37/37 통과. **ruff check/format**: 둘 다 통과
+- **pytest**: 46/46 통과. **ruff check/format**: 둘 다 통과
 - **Docker**: 집 Mac(Mac mini, M4)에 Homebrew+Docker Desktop 신규 설치, `docker compose up -d --build` 정상 기동 검증 완료. `worker`/`beat` 서비스도 추가되어 함께 기동됨.
 - **테스트 DB**: `auction_test_db`는 `docker compose up`만으로는 생성되지 않음 — 최초 1회 `docker compose exec postgres psql -U auction -d auction_db -c "CREATE DATABASE auction_test_db;"` 필요 (README에 안내 추가)
 - **실제 API 키**: `.env`에 `ONBID_API_KEY`/`MOLIT_API_KEY` 실제 서비스키 반영됨(gitignore 처리, 저장소엔 안 올라감). **`ENABLE_MOCK_CONNECTORS=false`로 변경되어 있음** — 이 Mac의 `.env`는 이제 실제 온비드/국토부 API를 호출한다(beat이 매시간/매일 자동 호출도 함). 다른 환경에서 Mock을 쓰려면 `.env`에서 다시 `true`로 바꿀 것.
 - **주의**: `check/` 디렉터리에 data.go.kr 활용신청 화면 캡처와 서비스키가 그대로 담긴 스크린샷/문서가 있음 — `.gitignore`에 등록되어 커밋되지 않지만, 다른 사람과 공유 시 주의
+- **할 일(다음 세션 전)**: data.go.kr 마이페이지에서 국토부 실거래가 신규 데이터셋 4개(오피스텔/연립다세대/단독다가구/상업업무용, `real_transaction_connector.py`의 `PROPERTY_TYPE_CONFIG` 참고) 활용신청 승인 필요. 승인 전까지는 `property_type` 지정 호출이 전부 403으로 실패함(코드는 정상, 승인 문제).
 
 ## 완료된 작업
 1. **MVP Phase 1~6** (지시서 `docs/개발지시서-v1.0.md` 기준) — 전부 완료

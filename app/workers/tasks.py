@@ -63,7 +63,9 @@ def collect_all_sources_task() -> list[dict[str, Any]]:
     return asyncio.run(_run_and_dispose_engine(_collect_all_sources()))
 
 
-async def _collect_real_transaction_all_regions(deal_ymd: str | None) -> list[dict[str, Any]]:
+async def _collect_real_transaction_all_regions(
+    deal_ymd: str | None, property_type: str | None
+) -> list[dict[str, Any]]:
     from app.ingestion.real_transaction_connector import get_supported_regions
 
     results: list[dict[str, Any]] = []
@@ -73,6 +75,8 @@ async def _collect_real_transaction_all_regions(deal_ymd: str | None) -> list[di
             kwargs["sigungu"] = sigungu
         if deal_ymd:
             kwargs["deal_ymd"] = deal_ymd
+        if property_type:
+            kwargs["property_type"] = property_type
         try:
             result = await collect_source_items("real_transaction", **kwargs)
         except Exception as exc:
@@ -89,10 +93,18 @@ async def _collect_real_transaction_all_regions(deal_ymd: str | None) -> list[di
 
 
 @celery_app.task(name="app.workers.tasks.collect_real_transaction_all_regions_task")
-def collect_real_transaction_all_regions_task(deal_ymd: str | None = None) -> list[dict[str, Any]]:
+def collect_real_transaction_all_regions_task(
+    deal_ymd: str | None = None, property_type: str | None = None
+) -> list[dict[str, Any]]:
     """국토부 실거래가를 `_LAWD_CD_MAP`에 등록된 전국 250개 시/군/구 전체에 대해
     순회 수집하는 Celery task. 지역 하나당 별도 collect_source_items 호출(및
     별도 collection_jobs 로그)이 생성된다. deal_ymd 미지정 시 각 호출은 커넥터
-    기본값(이번 달)을 사용한다.
+    기본값(이번 달)을 사용한다. property_type 미지정 시 기존과 동일하게
+    "apartment"만 수집한다(하위 호환) — 다른 매물종별(officetel/row_house/
+    detached_house/commercial)을 전국 순회하려면 property_type을 지정해 별도
+    beat 스케줄을 추가하면 된다. 단, 해당 매물종별 데이터셋이 data.go.kr에서
+    활용신청 승인된 서비스키가 아니면 각 지역 호출이 실패로 기록된다.
     """
-    return asyncio.run(_run_and_dispose_engine(_collect_real_transaction_all_regions(deal_ymd)))
+    return asyncio.run(
+        _run_and_dispose_engine(_collect_real_transaction_all_regions(deal_ymd, property_type))
+    )
