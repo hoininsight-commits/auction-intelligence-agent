@@ -9,7 +9,7 @@
 
 ## 지금 상태 (한눈에)
 - **저장소**: https://github.com/hoininsight-commits/auction-intelligence-agent (public)
-- **최신 커밋**: `3c9d23e` "view_count/watch_count 실제 증가 로직 구현 + 프론트엔드 핸드오프 문서 추가"
+- **최신 커밋**: `4fdbebb` "종합판정 배지(verdict: good/fair/caution) 구현"
 - **working tree**: clean (미커밋 변경 없음)
 - **pytest**: 37/37 통과. **ruff check/format**: 둘 다 통과
 - **Docker**: 집 Mac(Mac mini, M4)에 Homebrew+Docker Desktop 신규 설치, `docker compose up -d --build` 정상 기동 검증 완료. `worker`/`beat` 서비스도 추가되어 함께 기동됨.
