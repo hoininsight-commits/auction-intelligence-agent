@@ -64,6 +64,7 @@ async def get_auction_item_detail(
             else None,
             confidence=prediction.confidence,
             model_version=prediction.model_version,
+            verdict=(prediction.explanation or {}).get("verdict"),
         )
         if prediction
         else None

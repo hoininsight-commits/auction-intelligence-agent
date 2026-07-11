@@ -29,6 +29,8 @@ from app.core.constants import (
     REGION_DEMAND_COEFFICIENT,
     RISK_COEFFICIENT,
     RULE_PREDICTION_MODEL_NAME,
+    VERDICT_CAUTION_PRICE_GAP_MIN,
+    VERDICT_GOOD_PRICE_GAP_MAX,
 )
 from app.core.disclaimers import PREDICTION_DISCLAIMER
 from app.models.auction_item import AuctionItem
@@ -62,6 +64,7 @@ class PredictionCalculation:
     disclaimer: str = PREDICTION_DISCLAIMER
     base_method: str = ""
     adjustment_factor: float = 1.0
+    verdict: str = "fair"
 
 
 class PricePredictionService:
@@ -114,13 +117,16 @@ class PricePredictionService:
             f"지역({auction_item.sido or '기타'}) 수요 보정계수({region_coefficient})를 적용했습니다."
         )
 
-        price_gap_coefficient = self._compute_price_gap_coefficient(
+        price_gap_coefficient, price_gap_ratio = self._compute_price_gap_coefficient(
             auction_item, transactions, explanation
         )
 
         adjustment_factor = (
             fail_coefficient * risk_coefficient * region_coefficient * price_gap_coefficient
         )
+
+        verdict = self._determine_verdict(price_gap_ratio, risk_level)
+        explanation.append(f"종합판정: {verdict}")
 
         median_price = base_price * adjustment_factor
 
@@ -161,6 +167,7 @@ class PricePredictionService:
             disclaimer=PREDICTION_DISCLAIMER,
             base_method=base_method,
             adjustment_factor=adjustment_factor,
+            verdict=verdict,
         )
 
     async def predict_and_save(self, auction_item_id: int) -> PredictionCalculation | None:
@@ -182,6 +189,7 @@ class PricePredictionService:
                 "messages": calculation.explanation,
                 "base_method": calculation.base_method,
                 "adjustment_factor": round(calculation.adjustment_factor, 6),
+                "verdict": calculation.verdict,
             },
             disclaimer=calculation.disclaimer,
         )
@@ -252,18 +260,18 @@ class PricePredictionService:
         auction_item: AuctionItem,
         transactions: list,
         explanation: list[str],
-    ) -> float:
+    ) -> tuple[float, float | None]:
         appraisal_price = auction_item.appraisal_price
         deal_prices = [t.deal_price for t in transactions if t.deal_price]
         if not appraisal_price or not deal_prices:
             explanation.append(
                 "인근 실거래가 데이터가 없어 시세괴리 보정계수는 적용하지 않았습니다(1.00)."
             )
-            return PRICE_GAP_COEFFICIENT_NO_DATA
+            return PRICE_GAP_COEFFICIENT_NO_DATA, None
 
         avg_deal_price = sum(deal_prices) / len(deal_prices)
         if avg_deal_price <= 0:
-            return PRICE_GAP_COEFFICIENT_NO_DATA
+            return PRICE_GAP_COEFFICIENT_NO_DATA, None
 
         price_gap_ratio = appraisal_price / avg_deal_price
         for upper_bound, coefficient in PRICE_GAP_COEFFICIENT_BANDS:
@@ -271,12 +279,31 @@ class PricePredictionService:
                 explanation.append(
                     f"인근 실거래가 평균 대비 시세괴리율({price_gap_ratio:.2f})에 따른 보정계수({coefficient})를 적용했습니다."
                 )
-                return coefficient
+                return coefficient, price_gap_ratio
 
         explanation.append(
             f"인근 실거래가 평균 대비 시세괴리율({price_gap_ratio:.2f})이 커서 보정계수({PRICE_GAP_COEFFICIENT_ABOVE_MAX})를 적용했습니다."
         )
-        return PRICE_GAP_COEFFICIENT_ABOVE_MAX
+        return PRICE_GAP_COEFFICIENT_ABOVE_MAX, price_gap_ratio
+
+    def _determine_verdict(self, price_gap_ratio: float | None, risk_level: str) -> str:
+        """예상낙찰가율이 아니라 시세괴리율(§8.7)과 위험도(§8.5)만으로 판정한다.
+
+        예측 범위(low/mid/high)는 시세괴리 보정계수가 이미 반영된 결과라 그걸 다시
+        verdict 기준으로 쓰면 순환 참조가 된다. 그래서 verdict는 보정 전 원재료인
+        시세괴리율/위험도만 독립적으로 본다.
+        """
+        if risk_level == "high":
+            return "caution"
+        if price_gap_ratio is not None and price_gap_ratio > VERDICT_CAUTION_PRICE_GAP_MIN:
+            return "caution"
+        if (
+            price_gap_ratio is not None
+            and price_gap_ratio <= VERDICT_GOOD_PRICE_GAP_MAX
+            and risk_level == "low"
+        ):
+            return "good"
+        return "fair"
 
     def _determine_confidence(self, similar_count: int, transaction_count: int) -> str:
         """§8.10 신뢰도 산정 기준의 MVP 완화 버전.

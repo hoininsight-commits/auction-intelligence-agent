@@ -104,6 +104,7 @@ class AuctionItemSearchItem(BaseModel):
     predicted_price_mid: int | None = None
     predicted_rate_mid: float | None = None
     risk_level: str | None = None
+    verdict: str | None = None
     status: str | None = None
     view_count: int = 0
     watch_count: int = 0
@@ -165,6 +166,7 @@ class LatestPredictionRead(BaseModel):
     predicted_rate_high: float | None = None
     confidence: str | None = None
     model_version: str | None = None
+    verdict: str | None = None
 
 
 class RiskAssessmentSummary(BaseModel):

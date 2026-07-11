@@ -31,15 +31,20 @@
   "predicted_price_mid": 418000000,
   "predicted_rate_mid": 83.6,
   "risk_level": "medium",
-  "status": "active"
+  "verdict": "fair",
+  "status": "active",
+  "view_count": 128,
+  "watch_count": 12
 }
 ```
 
 - `appraisal_price` / `minimum_price` — 감정가 / 최저입찰가 (원 단위 정수)
 - `fail_count` — 유찰 횟수. 카드에서 "N회 유찰" 배지로 흔히 씀
 - `predicted_price_mid` / `predicted_rate_mid` — 참고용 예상 낙찰가와 그 비율(%). **AI 정답 아님**, 룰 계산값
-- `risk_level` — `"high"` / `"medium"` / `"unknown"` 셋 중 하나 (현재 `"low"`는 실제로는 거의 안 나옴 — 아래 "설계 중" 항목 참고)
+- `risk_level` — `"high"` / `"medium"` / `"unknown"` 셋 중 하나 (현재 `"low"`는 실제로는 거의 안 나옴 — 아래 "종합 판정" 항목 참고)
+- `verdict` — `"good"` / `"fair"` / `"caution"` / `null`. 아래 "종합 판정 배지" 항목 참고
 - `status` — `active` / `scheduled` / `sold` / `failed` / `cancelled` / `expired` / `unknown`
+- `view_count` / `watch_count` — 조회수 / 찜수. 아래 "관심도" 항목 참고
 
 ### 상세 화면 — `GET /api/v1/auction-items/{id}`
 
@@ -47,6 +52,8 @@
 
 ```json
 {
+  "view_count": 129,
+  "watch_count": 12,
   "real_estate_detail": { "exclusive_area": 84.5, "floor_info": "12층", "usage_type": "공동주택" },
   "latest_prediction": {
     "predicted_price_low": 405000000,
@@ -56,7 +63,8 @@
     "predicted_rate_mid": 83.6,
     "predicted_rate_high": 86.4,
     "confidence": "medium",
-    "model_version": "rule-v1"
+    "model_version": "rule-v1",
+    "verdict": "fair"
   },
   "risk_assessment": {
     "risk_level": "medium",
@@ -71,28 +79,29 @@
 - `nearby_transactions` — 인근 실거래가 비교용. 빈 배열일 수 있음(데이터 없는 지역)
 - **`disclaimer` 문구는 화면에서 임의로 줄이거나 빼면 안 됨** — 법적 요구사항, 절대 규칙
 
-## 화면에 필요하지만 아직 API에 없는 것 (설계 확정, 코드 작업 예정)
+## 관심도·종합판정 — 구현 완료 (2026-07-11)
 
-디자인은 이 필드들이 "곧 채워질 예정"이라고 가정하고 자리(placeholder)를 잡아도 됨.
+목록/상세 API 둘 다에 아래 필드가 이제 실제로 채워져서 내려온다.
 
 ### 1. 관심도 — `view_count`, `watch_count`
 
 - 의미: 이 물건을 몇 명이 봤는지(view_count), 몇 명이 찜했는지(watch_count)
-- 지금은 DB 컬럼만 있고 항상 0 — 실제로 늘어나게 만들 예정
+- 상세 조회할 때마다 view_count +1, 관심물건 추가/삭제할 때 watch_count ±1
 - **"인기 물건" 뱃지 같은 임계값 기반 UI는 아직 넣지 말 것** — 실사용 트래픽이 없어서 몇 회 이상을 "인기"로 볼지 기준이 없음. 우선 숫자 그대로 노출하는 디자인으로 잡아달라 (예: "조회 128 · 찜 12")
-- 목록/상세 응답 둘 다에 추가될 예정
 
-### 2. 종합 판정 배지 — 가칭 `verdict`
+### 2. 종합 판정 배지 — `verdict`
 
-경매 물건 하나를 "우수 / 보통 / 주의" 3단계 중 하나로 요약하는 배지. 아래 두 축을 이미 있는 값으로 조합해서 결정(새 AI 없음, 룰 조합):
+목록 항목(`AuctionItemSearchItem`)과 상세의 `latest_prediction.verdict`에 문자열로 내려온다. **값은 영문 코드**이고, 화면 라벨은 아래처럼 매핑해서 쓰면 됨:
 
-| 시세 대비 감정가 | 위험도 | 종합 배지 |
+| API 값(`verdict`) | 화면 라벨(제안) | 의미 |
 |---|---|---|
-| 시세보다 쌈 | 낮음 | **우수** |
-| 시세 보통 | 낮음/보통 | **보통** |
-| 시세보다 비쌈(20%↑) | — | **주의** |
-| — | 높음 | **주의** |
+| `"good"` | 우수 | 시세보다 감정가가 쌈(시세괴리율 0.90 이하) **그리고** 위험도 낮음 |
+| `"fair"` | 보통 | 위 두 조건에 해당 안 되는 나머지 전부(정보 부족 포함) |
+| `"caution"` | 주의 | 위험도 높음, 또는 시세보다 감정가가 20% 넘게 비쌈 |
+| `null` | (배지 숨김) | 아직 예측이 계산/저장되지 않은 물건 — `predict-price` API가 최소 1번 호출된 물건만 값이 생김 |
 
+- 새 AI 판단이 아니라 이미 있던 rule-v1 예측 계산 안의 "시세괴리율"과 위험도를 조합한 룰 하나. 예측 자체가 없으면(=`predicted_price_mid`도 `null`) verdict도 `null` — 이 둘은 항상 같이 비거나 같이 참
+- 실제 데이터에서는 `risk_level`이 `"low"`로 저장된 물건이 드물어서(기본값은 "정보부족=unknown"으로 보수적으로 잡음) `"good"`이 자주 안 뜰 수 있음 — 버그 아니라 "증거 없으면 우수라고 안 한다"는 의도된 보수적 설계
 - 디자인 관점에서 3가지 상태만 있으면 됨: `우수`(긍정색), `보통`(중립색), `주의`(경고색) — 이미 `risk_level`에 medium/high/unknown 쓰던 것과 톤을 맞추면 됨
 - 이 배지는 감정/판단을 대신하는 게 아니라 "먼저 볼 것"을 골라주는 용도라는 뉘앙스가 중요 — 옆에 작은 느낌표 아이콘 + disclaimer 툴팁 정도로 "참고용" 신호를 같이 주는 걸 권장
 

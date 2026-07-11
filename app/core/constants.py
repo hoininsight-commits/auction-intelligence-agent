@@ -76,6 +76,13 @@ PRICE_GAP_COEFFICIENT_BANDS = [
 PRICE_GAP_COEFFICIENT_ABOVE_MAX = 0.93
 PRICE_GAP_COEFFICIENT_NO_DATA = 1.00
 
+# 종합판정(verdict) 배지 기준 — 새 계산식을 만들지 않고 위 시세괴리 구간을 그대로 재사용한다.
+# 시세괴리율 <= 0.90 (감정가가 시세보다 쌈) 이고 위험도 낮음 -> "good"
+# 시세괴리율 > 1.20 (감정가가 시세보다 비쌈) 이거나 위험도 높음 -> "caution"
+# 그 외 -> "fair"
+VERDICT_GOOD_PRICE_GAP_MAX = PRICE_GAP_COEFFICIENT_BANDS[0][0]
+VERDICT_CAUTION_PRICE_GAP_MIN = PRICE_GAP_COEFFICIENT_BANDS[-1][0]
+
 # §8.9 예측 범위
 PREDICTION_RANGE_NARROW = (0.97, 1.03)
 PREDICTION_RANGE_WIDE = (0.94, 1.06)

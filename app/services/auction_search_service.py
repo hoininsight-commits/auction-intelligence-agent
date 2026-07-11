@@ -102,6 +102,7 @@ async def search_auction_items(
             if prediction and prediction.predicted_rate_mid is not None
             else None,
             risk_level=risk.risk_level if risk else None,
+            verdict=(prediction.explanation or {}).get("verdict") if prediction else None,
             status=item.status,
             view_count=item.view_count,
             watch_count=item.watch_count,
