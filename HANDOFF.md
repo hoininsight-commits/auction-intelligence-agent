@@ -10,7 +10,7 @@
 
 ## 지금 상태 (한눈에)
 - **저장소**: https://github.com/hoininsight-commits/auction-intelligence-agent (public)
-- **최신 커밋**: `24c61a9` "온비드 페이지네이션 버그 수정 + 국토부 매물종별 실거래가 4종 확장"
+- **최신 커밋**: `6fdc964` "관리 페이지 리스트 UX 버그 3건 수정: 지역 부분일치 검색, 부동산/차량 탭, 정렬 UI"
 - **working tree**: clean (미커밋 변경 없음)
 - **pytest**: 46/46 통과. **ruff check/format**: 둘 다 통과
 - **Docker**: 집 Mac(Mac mini, M4)에 Homebrew+Docker Desktop 신규 설치, `docker compose up -d --build` 정상 기동 검증 완료. `worker`/`beat` 서비스도 추가되어 함께 기동됨.
