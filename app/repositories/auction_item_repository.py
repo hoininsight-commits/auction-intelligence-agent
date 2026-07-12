@@ -83,15 +83,19 @@ def _build_filtered_query(filters: dict[str, Any]) -> tuple[Select, Any, Any]:
     if filters.get("source"):
         stmt = stmt.where(AuctionItem.source == filters["source"])
     if filters.get("auction_type"):
-        stmt = stmt.where(AuctionItem.auction_type == filters["auction_type"])
+        auction_types = [t for t in filters["auction_type"].split(",") if t]
+        if len(auction_types) > 1:
+            stmt = stmt.where(AuctionItem.auction_type.in_(auction_types))
+        else:
+            stmt = stmt.where(AuctionItem.auction_type == auction_types[0])
     if filters.get("category"):
         stmt = stmt.where(AuctionItem.category == filters["category"])
     if filters.get("sido"):
-        stmt = stmt.where(AuctionItem.sido == filters["sido"])
+        stmt = stmt.where(AuctionItem.sido.ilike(f"%{filters['sido']}%"))
     if filters.get("sigungu"):
-        stmt = stmt.where(AuctionItem.sigungu == filters["sigungu"])
+        stmt = stmt.where(AuctionItem.sigungu.ilike(f"%{filters['sigungu']}%"))
     if filters.get("eupmyeondong"):
-        stmt = stmt.where(AuctionItem.eupmyeondong == filters["eupmyeondong"])
+        stmt = stmt.where(AuctionItem.eupmyeondong.ilike(f"%{filters['eupmyeondong']}%"))
     if filters.get("min_price") is not None:
         stmt = stmt.where(AuctionItem.minimum_price >= filters["min_price"])
     if filters.get("max_price") is not None:

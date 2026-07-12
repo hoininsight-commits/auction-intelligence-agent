@@ -88,6 +88,25 @@
     color: var(--text-muted);
     margin-top: 2px;
   }
+  .tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .tabs button {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: inherit;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .tabs button.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
   .filters {
     display: flex;
     flex-wrap: wrap;
@@ -218,6 +237,7 @@
 <body>
 <header class="topbar">
   <h1>Auction Intelligence Agent — 관리자 페이지</h1>
+  <p style="margin:0 0 4px;"><a href="./gaeum.html">가늠 — 물건 검색 화면 미리보기 &rarr;</a></p>
   <div class="disclaimer">
     본 서비스의 예상 낙찰가, 수익률, 권리분석, 위험도 정보는 참고용입니다. 실제 입찰 및 투자 결정은
     사용자의 책임이며, 입찰 전 법무사, 변호사, 세무사 등 전문가 검토를 권장합니다. 본 서비스는 낙찰 결과나
@@ -234,17 +254,24 @@
 
   <section id="list-section">
     <h2>경매 물건 목록</h2>
+    <div class="tabs" id="type-tabs">
+      <button type="button" class="active" data-type="">전체</button>
+      <button type="button" data-type="real_estate,public_sale">부동산</button>
+      <button type="button" data-type="vehicle">차량</button>
+    </div>
     <div class="filters">
-      <input type="text" id="filter-sido" placeholder="시/도 (예: 서울특별시)" />
+      <input type="text" id="filter-sido" placeholder="시/도 (예: 서울, 서울특별시 모두 검색됨)" />
       <select id="filter-category">
         <option value="">전체 카테고리</option>
         <option value="apartment">apartment</option>
         <option value="villa">villa</option>
+        <option value="house">house</option>
         <option value="officetel">officetel</option>
         <option value="commercial">commercial</option>
         <option value="land">land</option>
         <option value="factory">factory</option>
         <option value="vehicle">vehicle</option>
+        <option value="unknown">unknown</option>
       </select>
       <select id="filter-status">
         <option value="">전체 상태</option>
@@ -252,6 +279,16 @@
         <option value="sold">sold</option>
         <option value="cancelled">cancelled</option>
         <option value="failed">failed</option>
+      </select>
+      <select id="filter-sort">
+        <option value="bid_date_asc">입찰일 빠른순</option>
+        <option value="bid_date_desc">입찰일 늦은순</option>
+        <option value="minimum_price_asc">최저가 낮은순</option>
+        <option value="minimum_price_desc">최저가 높은순</option>
+        <option value="appraisal_price_asc">감정가 낮은순</option>
+        <option value="appraisal_price_desc">감정가 높은순</option>
+        <option value="fail_count_desc">유찰 많은순</option>
+        <option value="created_at_desc">최근 수집순</option>
       </select>
       <button id="search-btn" type="button">검색</button>
     </div>
@@ -367,14 +404,19 @@ async function loadQualitySummary() {
   }
 }
 
+let currentAuctionType = "";
+
 function buildQuery(page) {
   const params = new URLSearchParams();
   const sido = document.getElementById("filter-sido").value.trim();
   const category = document.getElementById("filter-category").value;
   const status = document.getElementById("filter-status").value;
+  const sort = document.getElementById("filter-sort").value;
+  if (currentAuctionType) params.set("auction_type", currentAuctionType);
   if (sido) params.set("sido", sido);
   if (category) params.set("category", category);
   if (status) params.set("status", status);
+  if (sort) params.set("sort", sort);
   params.set("page", page);
   params.set("limit", PAGE_LIMIT);
   return params.toString();
@@ -539,6 +581,16 @@ document.getElementById("detail-overlay").addEventListener("click", (e) => {
   }
 });
 document.getElementById("search-btn").addEventListener("click", () => loadItems(1));
+document.getElementById("filter-sort").addEventListener("change", () => loadItems(1));
+document.getElementById("type-tabs").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-type]");
+  if (!btn) return;
+  currentAuctionType = btn.dataset.type;
+  document
+    .querySelectorAll("#type-tabs button")
+    .forEach((b) => b.classList.toggle("active", b === btn));
+  loadItems(1);
+});
 document.getElementById("prev-page").addEventListener("click", () => {
   if (currentPage > 1) loadItems(currentPage - 1);
 });
